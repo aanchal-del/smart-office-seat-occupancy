@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
+  <rect width="1200" height="800" rx="32" fill="#e7eff9" />
+  <rect x="60" y="60" width="1080" height="680" rx="32" fill="#ffffff" stroke="#cbd5e1" stroke-width="6" />
+
+  <g fill="#f3f4f6" stroke="#d1d5db" stroke-width="5">
+    <rect x="80" y="80" width="360" height="240" rx="28" />
+    <rect x="80" y="340" width="360" height="180" rx="28" />
+    <rect x="80" y="540" width="360" height="180" rx="28" />
+    <rect x="520" y="80" width="580" height="280" rx="28" />
+    <rect x="520" y="390" width="280" height="300" rx="28" />
+    <rect x="830" y="390" width="270" height="300" rx="28" />
+  </g>
+
+  <g fill="#475569" font-family="Inter, sans-serif" font-weight="700" font-size="32">
+    <text x="120" y="140">Cafeteria</text>
+    <text x="120" y="260">Pantry</text>
+    <text x="120" y="430">Head Room 1</text>
+    <text x="120" y="590">Head Room 2</text>
+    <text x="620" y="160">Conference Room</text>
+    <text x="620" y="440">Collab Space</text>
+    <text x="830" y="440">Coffee Bar</text>
+  </g>
+
+  <g fill="#1f2937" font-family="Inter, sans-serif" font-size="26" font-weight="600">
+    <text x="570" y="520">Table 1</text>
+    <text x="770" y="520">Table 2</text>
+    <text x="570" y="590">Table 3</text>
+    <text x="770" y="590">Table 4</text>
+    <text x="570" y="660">Table 5</text>
+    <text x="770" y="660">Table 6</text>
+    <text x="570" y="720">Table 7</text>
+  </g>
+
+  <g fill="#94a3b8" font-family="Inter, sans-serif" font-size="20">
+    <text x="580" y="200">Meeting</text>
+    <text x="580" y="230">Area</text>
+    <text x="840" y="480">Coffee</text>
+    <text x="840" y="510">Corner</text>
+  </g>
+</svg>

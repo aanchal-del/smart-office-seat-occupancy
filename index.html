@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Office Seat Occupancy Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">Smart Office Seat Occupancy</div>
+      <nav class="nav-links">
+        <button id="view-map" class="nav-btn active">Live Floor Map</button>
+        <button id="view-directory" class="nav-btn">Employee Directory</button>
+        <button id="view-requirements" class="nav-btn">Requirements</button>
+        <button id="view-rooms" class="nav-btn">Meeting Rooms</button>
+        <button id="view-admin" class="nav-btn">Admin Panel</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="panel-map" class="panel active">
+        <section class="summary-row">
+          <div class="summary-card">
+            <span>Total Seats</span>
+            <strong id="total-seats">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Total Staff</span>
+            <strong id="total-staff-count">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>In Office</span>
+            <strong id="office-staff-count">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Working from Home</span>
+            <strong id="wfh-staff-count">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Occupied Desks</span>
+            <strong id="occupied-count">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Free Desks</span>
+            <strong id="free-count">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Occupancy</span>
+            <strong id="occupancy-rate">0%</strong>
+          </div>
+        </section>
+
+        <section class="map-controls">
+          <div class="floor-label">
+            <strong>Floor:</strong> Ground Level
+          </div>
+          <div class="map-search-container">
+            <input id="map-search" type="search" placeholder="Search occupant on map..." />
+          </div>
+          <div class="layout-actions">
+            <button id="toggle-table-view" class="btn secondary small">Table View</button>
+            <button id="zoom-in" class="btn secondary small">Zoom In</button>
+            <button id="zoom-out" class="btn secondary small">Zoom Out</button>
+            <button id="zoom-reset" class="btn secondary small">Reset</button>
+          </div>
+          <div class="layout-toggle">
+            <label>
+              <input id="layout-toggle" type="checkbox" checked />
+              Show grid lines
+            </label>
+          </div>
+          <div id="map-department-filters" class="department-buttons"></div>
+          <div class="legend">
+            <span><em class="legend-dot free"></em> Free</span>
+            <span><em class="legend-dot occupied"></em> Occupied</span>
+            <span><em class="legend-dot reserved"></em> Reserved</span>
+          </div>
+          <div class="refresh-note">Auto-refresh every 10 seconds</div>
+        </section>
+
+        <section class="floor-map" id="floor-map"></section>
+      </section>
+
+      <section id="panel-directory" class="panel">
+        <div class="directory-header">
+          <h2>Who's In Today</h2>
+          <div class="directory-status">In office: <span id="directory-count">0</span></div>
+        </div>
+        <div class="directory-controls">
+          <div class="filters-row">
+            <div class="directory-filter">
+              <input id="directory-search" type="search" placeholder="Search by name or department" />
+            </div>
+            <div class="directory-filter">
+              <select id="directory-table-filter">
+                <option value="">All tables</option>
+              </select>
+            </div>
+          </div>
+          <form id="directory-add-form" class="directory-add-form">
+            <input id="directory-add-name" type="text" placeholder="Name" required />
+            <select id="directory-add-dept" required></select>
+            <select id="directory-add-seat" required></select>
+            <button type="submit" class="btn primary">Add to Directory</button>
+          </form>
+        </div>
+        <div id="directory-groups" class="directory-groups"></div>
+      </section>
+
+       <section id="panel-requirements" class="panel">
+        <div class="requirements-card">
+          <h2>Project Requirements Summary</h2>
+          <p>This system is designed for a single-office location with a flexible desk model and a total of 56 available seats across 6 modular tables.</p>
+          <ul>
+            <li>Total staff: <strong>66</strong></li>
+            <li>Total seat capacity: <strong>56 desks</strong></li>
+            <li>Flexible seating arrangement with admin-controlled Work From Home (WFH) adjustment</li>
+            <li>Reserved seats for HR, IT, and Finance in Table 6</li>
+            <li>Separate zones: Client Servicing (Table 1), Creative Art (Table 2), Copywriting (Table 3), Films (Table 4), Studio (Table 5), Digital & Support (Table 6)</li>
+            <li>Meeting room seats are excluded</li>
+          </ul>
+          <p>The app includes:</p>
+          <ul>
+            <li>Live seat map with free / occupied / reserved status</li>
+            <li>Employee directory with desk and department filtering</li>
+            <li>Admin controls for seat management and employee data</li>
+            <li>Requirement summary page for client discovery data</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="panel-rooms" class="panel">
+        <div class="rooms-header">
+          <h2>Meeting Rooms</h2>
+          <p>Live availability — admins can book or release rooms.</p>
+        </div>
+        <div id="rooms-grid" class="rooms-grid"></div>
+      </section>
+
+      <section id="panel-admin" class="panel">
+        <div class="admin-stage">
+          <div class="admin-login" id="admin-login-panel">
+            <h2>Admin Login</h2>
+            <div class="login-group">
+              <label for="admin-user">Username</label>
+              <input id="admin-user" type="text" placeholder="admin" />
+            </div>
+            <div class="login-group">
+              <label for="admin-pass">Password</label>
+              <input id="admin-pass" type="password" placeholder="admin123" />
+            </div>
+            <button id="admin-login-btn" class="btn primary">Sign in</button>
+            <p class="login-help">Use <strong>admin / admin123</strong></p>
+            <p class="login-error hidden" id="login-error">Invalid credentials.</p>
+          </div>
+
+          <div id="admin-dashboard" class="admin-dashboard hidden">
+            <div class="admin-header">
+              <h2>Admin Workspace</h2>
+              <div style="display:flex;gap:8px;">
+                <button id="admin-daily-reset-btn" class="btn danger">Daily Reset</button>
+                <button id="admin-logout-btn" class="btn secondary">Logout</button>
+              </div>
+            </div>
+            
+            <div class="admin-workspace-layout">
+              <!-- Sidebar -->
+              <aside class="admin-sidebar">
+                <nav class="admin-nav">
+                  <button id="admin-nav-seats" class="admin-nav-btn active">
+                    <span class="icon">🪑</span> Seat Control
+                  </button>
+                  <button id="admin-nav-employees" class="admin-nav-btn">
+                    <span class="icon">👤</span> Manage Employees
+                  </button>
+                  <button id="admin-nav-add" class="admin-nav-btn">
+                    <span class="icon">➕</span> Add New Member
+                  </button>
+                  <button id="admin-nav-tables" class="admin-nav-btn">
+                    <span class="icon">🗂️</span> Table Settings
+                  </button>
+                </nav>
+              </aside>
+
+              <!-- Main Content Workspace Area -->
+              <div class="admin-content-area">
+                <!-- Team Filter buttons at the top of the admin panel content -->
+                <div class="admin-team-filters-container">
+                  <span class="filter-label">Filter by Team:</span>
+                  <div id="admin-team-filters" class="department-buttons"></div>
+                  <div class="admin-search-bar">
+                    <input id="admin-search" type="search" placeholder="Search name, desk, dept…" />
+                  </div>
+                </div>
+
+                <!-- Tab 1: Seat Status Control -->
+                <div id="admin-tab-seats" class="admin-tab-content active">
+                  <div class="admin-card">
+                    <h3>Seat Control Panel</h3>
+                    <div class="admin-table-wrapper">
+                      <table class="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Floor</th>
+                            <th>Seat</th>
+                            <th>Table</th>
+                            <th>Status</th>
+                            <th>Employee</th>
+                            <th>Color</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="admin-seat-body"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab 2: Manage Employees List -->
+                <div id="admin-tab-employees" class="admin-tab-content">
+                  <div class="admin-card">
+                    <h3>Employee Directory Management</h3>
+                    <div class="admin-table-wrapper">
+                      <table class="admin-table small">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Dept</th>
+                            <th>Table</th>
+                            <th>Seat</th>
+                            <th>Status</th>
+                            <th>Edit</th>
+                            <th>Remove</th>
+                          </tr>
+                        </thead>
+                        <tbody id="admin-employee-body"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab 4: Table Settings -->
+                <div id="admin-tab-tables" class="admin-tab-content">
+                  <!-- populated by renderAdminTableSettings() -->
+                </div>
+
+                <!-- Tab 3: Add Employee Form -->
+                <div id="admin-tab-add" class="admin-tab-content">
+                  <div class="admin-card compact" style="max-width: 500px; margin: 0 auto;">
+                    <h3>Add Employee to Workspace</h3>
+                    <form id="employee-form" class="employee-form vertical">
+                      <div class="form-group">
+                        <label for="employee-name">Full Name</label>
+                        <input id="employee-name" type="text" placeholder="e.g. John Doe" required />
+                      </div>
+                      <div class="form-group">
+                        <label for="employee-dept">Department / Project</label>
+                        <select id="employee-dept" required>
+                          <!-- Dynamic options will be loaded here -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="employee-table">Assign to Table</label>
+                        <select id="employee-table">
+                          <option value="">-- No Table (WFH) --</option>
+                          <!-- Dynamic list of tables -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="employee-seat">Assign Desk (Optional)</label>
+                        <select id="employee-seat">
+                          <option value="">-- No Fixed Desk --</option>
+                          <!-- Dynamic list of free desks -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                          <input id="employee-wfh" type="checkbox" />
+                          Working from Home
+                        </label>
+                      </div>
+                      <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Add Employee</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="seat-tooltip-template">
+    <div class="seat-tooltip"></div>
+  </template>
+
+  <!-- Edit Employee Modal -->
+  <div id="edit-employee-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3>Edit Employee</h3>
+      <div class="form-group">
+        <label for="edit-emp-name">Full Name</label>
+        <input id="edit-emp-name" type="text" placeholder="Employee name" />
+      </div>
+      <div class="form-group">
+        <label for="edit-emp-dept">Department / Project</label>
+        <select id="edit-emp-dept"></select>
+      </div>
+      <div class="form-group">
+        <label for="edit-emp-table">Assign to Table</label>
+        <select id="edit-emp-table"></select>
+      </div>
+      <div class="form-group">
+        <label for="edit-emp-seat">Assign Desk (Optional)</label>
+        <select id="edit-emp-seat"></select>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input id="edit-emp-wfh" type="checkbox" />
+          Working from Home
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn primary" onclick="saveEditEmployee()">Save Changes</button>
+        <button class="btn secondary" onclick="closeEditModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
