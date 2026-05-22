@@ -270,10 +270,14 @@ async function saveSettingToDb(key, value) {
 }
 
 async function loadSettingsFromDb() {
+  // Always load from localStorage first so custom names survive a refresh
+  try { Object.assign(state.tableNames, JSON.parse(localStorage.getItem('tableNames') || '{}')); } catch {}
+  try { Object.assign(state.deptNames,  JSON.parse(localStorage.getItem('deptNames')  || '{}')); } catch {}
+  // Overlay with Supabase data when available and non-empty (Supabase wins on conflict)
   if (_supabase) {
     try {
       const { data, error } = await _supabase.from('settings').select('key, value');
-      if (!error && data) {
+      if (!error && data?.length) {
         data.forEach(row => {
           if (row.key === 'tableNames' && row.value && typeof row.value === 'object') {
             Object.assign(state.tableNames, row.value);
@@ -282,13 +286,9 @@ async function loadSettingsFromDb() {
             Object.assign(state.deptNames, row.value);
           }
         });
-        return;
       }
     } catch {}
   }
-  // Fallback: localStorage
-  try { Object.assign(state.tableNames, JSON.parse(localStorage.getItem('tableNames') || '{}')); } catch {}
-  try { Object.assign(state.deptNames,  JSON.parse(localStorage.getItem('deptNames')  || '{}')); } catch {}
 }
 
 async function syncDefaultRoomsToDb(dbRooms) {
@@ -1794,6 +1794,29 @@ window.saveDeptRowName = function(deptKey) {
   renderAllAfterRename();
 };
 
+window.resetTableNames = async function() {
+  if (!confirm('Reset all table names back to their defaults (Table 1, Table 2…)?')) return;
+  Object.keys(state.tableNames).forEach(k => { state.tableNames[k] = k; });
+  await saveSettingToDb('tableNames', state.tableNames);
+  renderAllAfterRename();
+};
+
+window.resetDeptNames = async function() {
+  if (!confirm('Reset all team/department names back to their defaults (CS, Art, Copy…)?')) return;
+  Object.keys(state.deptNames).forEach(k => { state.deptNames[k] = k; });
+  await saveSettingToDb('deptNames', state.deptNames);
+  renderAllAfterRename();
+};
+
+window.resetAllNames = async function() {
+  if (!confirm('Reset ALL table and team names back to their defaults?')) return;
+  Object.keys(state.tableNames).forEach(k => { state.tableNames[k] = k; });
+  Object.keys(state.deptNames).forEach(k => { state.deptNames[k] = k; });
+  await saveSettingToDb('tableNames', state.tableNames);
+  await saveSettingToDb('deptNames',  state.deptNames);
+  renderAllAfterRename();
+};
+
 window.doSwapDesks = function() {
   const aId = Number(document.getElementById('swap-emp-a').value);
   const bId = Number(document.getElementById('swap-emp-b').value);
@@ -1832,7 +1855,14 @@ function renderAdminTableSettings() {
 
   container.innerHTML = `
     <div class="admin-card">
-      <h3>Rename Tables &amp; Teams</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <h3 style="margin:0;">Rename Tables &amp; Teams</h3>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" style="background:#e67e22;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetTableNames()">Reset Table</button>
+          <button class="btn" style="background:#8e44ad;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetDeptNames()">Reset Dept</button>
+          <button class="btn" style="background:#e74c3c;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetAllNames()">Reset All</button>
+        </div>
+      </div>
       <p style="color:var(--muted);font-size:0.87rem;margin:0 0 4px;">Edit the table label and its team name. Changes update the floor map, filters, and directory.</p>
       <div class="table-rename-header-row">
         <span class="table-rename-label"></span>
