@@ -27,6 +27,8 @@ const state = {
   dragStart: { x: 0, y: 0 },
   searchQuery: '',
   editingEmployeeId: null,
+  customSeatPositions: {},  // { 'Desk 57': { x, y, dir } }
+  pendingNewDesk: null,     // { x, y } while modal is open
   tableNames: {
     'Table 1': 'Table 1',
     'Table 2': 'Table 2',
@@ -261,6 +263,32 @@ async function saveSeat(seat) {
   if (error) console.error('saveSeat failed:', error);
 }
 
+async function insertSeat(seat) {
+  state.seats.push(seat);
+  if (!_supabase) return;
+  const { error } = await _supabase.from('seats').insert(seat);
+  if (error) console.error('insertSeat failed:', error);
+}
+
+async function deleteSeat(seatId) {
+  state.seats = state.seats.filter(s => s.id !== seatId);
+  delete state.customSeatPositions[seatId];
+  await saveSettingToDb('customSeatPositions', state.customSeatPositions);
+  if (!_supabase) return;
+  const { error } = await _supabase.from('seats').delete().eq('id', seatId);
+  if (error) console.error('deleteSeat failed:', error);
+}
+
+function clientToSVGCoords(svg, clientX, clientY) {
+  const rect = svg.getBoundingClientRect();
+  const svgX = (clientX - rect.left) * (1300 / rect.width);
+  const svgY = (clientY - rect.top)  * (850  / rect.height);
+  return {
+    x: Math.round((svgX - state.panX) / state.zoom),
+    y: Math.round((svgY - state.panY) / state.zoom),
+  };
+}
+
 async function saveSettingToDb(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
   if (!_supabase) return;
@@ -270,9 +298,10 @@ async function saveSettingToDb(key, value) {
 }
 
 async function loadSettingsFromDb() {
-  // Always load from localStorage first so custom names survive a refresh
-  try { Object.assign(state.tableNames, JSON.parse(localStorage.getItem('tableNames') || '{}')); } catch {}
-  try { Object.assign(state.deptNames,  JSON.parse(localStorage.getItem('deptNames')  || '{}')); } catch {}
+  // Always load from localStorage first so custom data survives a refresh
+  try { Object.assign(state.tableNames,           JSON.parse(localStorage.getItem('tableNames')           || '{}')); } catch {}
+  try { Object.assign(state.deptNames,            JSON.parse(localStorage.getItem('deptNames')            || '{}')); } catch {}
+  try { Object.assign(state.customSeatPositions,  JSON.parse(localStorage.getItem('customSeatPositions')  || '{}')); } catch {}
   // Overlay with Supabase data when available and non-empty (Supabase wins on conflict)
   if (_supabase) {
     try {
@@ -284,6 +313,9 @@ async function loadSettingsFromDb() {
           }
           if (row.key === 'deptNames' && row.value && typeof row.value === 'object') {
             Object.assign(state.deptNames, row.value);
+          }
+          if (row.key === 'customSeatPositions' && row.value && typeof row.value === 'object') {
+            Object.assign(state.customSeatPositions, row.value);
           }
         });
       }
@@ -364,6 +396,10 @@ function bindUIActions() {
   document.getElementById('zoom-in').addEventListener('click', () => handleZoom(1.2));
   document.getElementById('zoom-out').addEventListener('click', () => handleZoom(0.85));
   document.getElementById('zoom-reset').addEventListener('click', () => resetZoom());
+  document.getElementById('drag-chair-source').addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('application/new-chair', '1');
+    e.dataTransfer.effectAllowed = 'copy';
+  });
   document.getElementById('layout-toggle').addEventListener('change', (event) => {
     state.showActualLayout = event.target.checked;
     renderFloorMap();
@@ -428,6 +464,7 @@ function switchView(view) {
 
 // ── Floor map rendering ───────────────────────────────────────────────────────
 function getSeatCoordinates(seatId) {
+  if (state.customSeatPositions[seatId]) return state.customSeatPositions[seatId];
   const num = parseInt(seatId.replace('Desk ', ''), 10);
   if (num <= 12) { // Table 1 - CS (12 desks: 1-6 top, 7-12 bottom)
     const idx = num - 1;
@@ -789,6 +826,33 @@ function renderFloorMap() {
     }
   });
 
+  // Drag-and-drop: accept a new chair dragged from the palette (admin only)
+  svg.addEventListener('dragover', (e) => {
+    if (!state.adminLoggedIn) return;
+    if (e.dataTransfer.types.includes('application/new-chair')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      svg.style.outline = '2px dashed #6366f1';
+    }
+  });
+
+  svg.addEventListener('dragleave', () => {
+    svg.style.outline = '';
+  });
+
+  svg.addEventListener('drop', (e) => {
+    svg.style.outline = '';
+    if (!state.adminLoggedIn) return;
+    if (!e.dataTransfer.types.includes('application/new-chair')) return;
+    e.preventDefault();
+    const { x, y } = clientToSVGCoords(svg, e.clientX, e.clientY);
+    showAddDeskModal(x, y);
+  });
+
+  // Show/hide the chair palette based on admin login
+  const palette = document.getElementById('chair-palette');
+  if (palette) palette.classList.toggle('hidden', !state.adminLoggedIn);
+
   renderSummary();
 }
 
@@ -879,6 +943,13 @@ function handleSeatClick(seatId) {
         <div class="popup-dept" style="margin-bottom: 8px;">Zone: ${seat.department}</div>
         ${actions}
       </div>`;
+  }
+
+  // For custom-placed desks show a remove option (admin only)
+  if (state.adminLoggedIn && state.customSeatPositions[seatId]) {
+    contentHtml += `<div style="margin-top:6px;border-top:1px solid #475569;padding-top:6px;">
+      <button class="btn danger small" style="width:100%;font-size:0.75rem;" onclick="removeCustomDesk('${seatId}')">Remove Desk</button>
+    </div>`;
   }
 
   foreign.innerHTML = contentHtml;
@@ -1409,6 +1480,8 @@ function populateAdminAddEmployeeFormOptions() {
 function renderAdminLoginState() {
   document.getElementById('admin-login-panel').classList.toggle('hidden', state.adminLoggedIn);
   document.getElementById('admin-dashboard').classList.toggle('hidden', !state.adminLoggedIn);
+  const palette = document.getElementById('chair-palette');
+  if (palette) palette.classList.toggle('hidden', !state.adminLoggedIn);
   if (state.adminLoggedIn) {
     state.adminTeamFilter = ''; // Reset team filter
     renderAdminTeamFilters();
@@ -1792,6 +1865,73 @@ window.saveDeptRowName = function(deptKey) {
   state.deptNames[deptKey] = val;
   saveSettingToDb('deptNames', state.deptNames);
   renderAllAfterRename();
+};
+
+// ── Add Desk via Drag-and-Drop ────────────────────────────────────────────────
+
+function showAddDeskModal(x, y) {
+  state.pendingNewDesk = { x, y };
+
+  const existingNums = state.seats
+    .map(s => parseInt(s.id.replace('Desk ', ''), 10))
+    .filter(n => !isNaN(n));
+  const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 57;
+
+  document.getElementById('new-desk-label').value  = `Desk ${nextNum}`;
+  document.getElementById('new-desk-id-val').value = `Desk ${nextNum}`;
+
+  const tableSelect = document.getElementById('new-desk-table');
+  tableSelect.innerHTML = seatTableGroups.map(t =>
+    `<option value="${t}">${getDisplayName(t)}</option>`).join('');
+
+  const deptSelect = document.getElementById('new-desk-dept');
+  deptSelect.innerHTML = [...new Set(Object.keys(state.deptNames))].map(d =>
+    `<option value="${d}">${getDeptName(d)}</option>`).join('');
+
+  document.getElementById('add-desk-modal').classList.remove('hidden');
+}
+
+window.confirmAddDesk = async function() {
+  if (!state.pendingNewDesk) return;
+  const { x, y } = state.pendingNewDesk;
+  const label  = document.getElementById('new-desk-label').value.trim();
+  const id     = document.getElementById('new-desk-id-val').value.trim();
+  const table  = document.getElementById('new-desk-table').value;
+  const dept   = document.getElementById('new-desk-dept').value;
+  const dir    = y < 530 ? 'top' : 'bottom';
+
+  if (!label || !id) { alert('Desk label is required.'); return; }
+  if (state.seats.find(s => s.id === id)) { alert(`ID "${id}" already exists.`); return; }
+
+  state.customSeatPositions[id] = { x, y, dir };
+  await saveSettingToDb('customSeatPositions', state.customSeatPositions);
+
+  await insertSeat({
+    id, label, floor: 'main-floor', status: 'free',
+    occupant: null, department: dept, table, color: null,
+  });
+
+  document.getElementById('add-desk-modal').classList.add('hidden');
+  state.pendingNewDesk = null;
+  renderFloorMap();
+  renderAdminSeats();
+};
+
+window.cancelAddDesk = function() {
+  document.getElementById('add-desk-modal').classList.add('hidden');
+  state.pendingNewDesk = null;
+};
+
+window.removeCustomDesk = async function(seatId) {
+  if (!confirm(`Remove desk "${seatId}" permanently?`)) return;
+  const emp = state.employees.find(e => e.seat === seatId);
+  if (emp) {
+    emp.seat = null; emp.table = 'No desk'; emp.wfh = true;
+    await updateEmployee(emp.id, { seat: null, table: 'No desk', wfh: true });
+  }
+  await deleteSeat(seatId);
+  document.querySelectorAll('.map-seat-popup').forEach(p => p.remove());
+  renderFloorMap(); renderAdminSeats(); renderDirectory();
 };
 
 window.resetTableNames = async function() {

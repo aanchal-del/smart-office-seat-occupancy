@@ -78,10 +78,44 @@
             <span><em class="legend-dot reserved"></em> Reserved</span>
           </div>
           <div class="refresh-note">Auto-refresh every 10 seconds</div>
+          <div id="chair-palette" class="chair-palette hidden">
+            <div
+              id="drag-chair-source"
+              class="draggable-chair"
+              draggable="true"
+              title="Drag onto the floor map to add a new desk"
+            >
+              &#x1FA91; Drag to Add Desk
+            </div>
+          </div>
         </section>
 
         <section class="floor-map" id="floor-map"></section>
       </section>
+
+      <!-- Add Desk Modal -->
+      <div id="add-desk-modal" class="add-desk-modal hidden">
+        <div class="add-desk-modal-box">
+          <h3 style="margin:0 0 16px;">Configure New Desk</h3>
+          <input type="hidden" id="new-desk-id-val" />
+          <label class="add-desk-field">
+            <span>Desk Label</span>
+            <input id="new-desk-label" type="text" placeholder="e.g. Desk 57" />
+          </label>
+          <label class="add-desk-field">
+            <span>Table</span>
+            <select id="new-desk-table"></select>
+          </label>
+          <label class="add-desk-field">
+            <span>Department</span>
+            <select id="new-desk-dept"></select>
+          </label>
+          <div class="add-desk-actions">
+            <button class="btn primary" onclick="confirmAddDesk()">Add Desk</button>
+            <button class="btn secondary" onclick="cancelAddDesk()">Cancel</button>
+          </div>
+        </div>
+      </div>
 
       <section id="panel-directory" class="panel">
         <div class="directory-header">
