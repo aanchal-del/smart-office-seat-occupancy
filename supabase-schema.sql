@@ -25,23 +25,15 @@ create table if not exists employees (
   wfh         boolean not null default false
 );
 
-create table if not exists settings (
-  key   text primary key,
-  value jsonb not null
-);
-
 -- 2. Row Level Security (anon key can read and write — admin auth is in the UI)
 alter table seats     enable row level security;
 alter table employees enable row level security;
-alter table settings  enable row level security;
 
 drop policy if exists "seats_all"     on seats;
 drop policy if exists "employees_all" on employees;
-drop policy if exists "settings_all"  on settings;
 
 create policy "seats_all"     on seats     for all to anon using (true) with check (true);
 create policy "employees_all" on employees for all to anon using (true) with check (true);
-create policy "settings_all"  on settings  for all to anon using (true) with check (true);
 
 -- 3. Seed — Seats (56 desks)
 insert into seats (id, label, floor, status, occupant, department, "table", color) values

@@ -1,0 +1,1346 @@
+{
+  "seats": [
+    {
+      "id": "Desk 1",
+      "label": "Desk 1",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Sujay Bhonsle",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 2",
+      "label": "Desk 2",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Smriti Tewari",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 3",
+      "label": "Desk 3",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Blaise Vaz",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 4",
+      "label": "Desk 4",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Jyoti Nair",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 5",
+      "label": "Desk 5",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Bhagyashree Shah",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 6",
+      "label": "Desk 6",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Nilesh Singh Bashera",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 7",
+      "label": "Desk 7",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Chandni Upadhyay",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 8",
+      "label": "Desk 8",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Pranjal Agarwal",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 9",
+      "label": "Desk 9",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Srushti Chawhan",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 10",
+      "label": "Desk 10",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Nathanial Siqueira Vaz",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 11",
+      "label": "Desk 11",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Dhruti Maru",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 12",
+      "label": "Desk 12",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Dhyan Ramnani",
+        "department": "CS"
+      },
+      "department": "CS",
+      "table": "Table 1",
+      "color": null
+    },
+    {
+      "id": "Desk 13",
+      "label": "Desk 13",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Rupesh Doiphode",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 14",
+      "label": "Desk 14",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Yogesh More",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 15",
+      "label": "Desk 15",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Rahul Kumawat",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 16",
+      "label": "Desk 16",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Masumi Shrimankar",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 17",
+      "label": "Desk 17",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Dhruvi Shah",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 18",
+      "label": "Desk 18",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Sonali Sawant",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 19",
+      "label": "Desk 19",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Sushant Agare",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 20",
+      "label": "Desk 20",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Amey Lad",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 21",
+      "label": "Desk 21",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Kiran Salkar",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 22",
+      "label": "Desk 22",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Atharva Salvi",
+        "department": "Art"
+      },
+      "department": "Art",
+      "table": "Table 2",
+      "color": null
+    },
+    {
+      "id": "Desk 23",
+      "label": "Desk 23",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Subodh Chaubey",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 24",
+      "label": "Desk 24",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Ryan Parkar",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 25",
+      "label": "Desk 25",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Ritwik Mishra",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 26",
+      "label": "Desk 26",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Sanjit Samant",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 27",
+      "label": "Desk 27",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Anarghya Poojary",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 28",
+      "label": "Desk 28",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Juhi Pravin Shah",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 29",
+      "label": "Desk 29",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Gaurav Pant",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 30",
+      "label": "Desk 30",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Aditya Salve",
+        "department": "Copy"
+      },
+      "department": "Copy",
+      "table": "Table 3",
+      "color": null
+    },
+    {
+      "id": "Desk 31",
+      "label": "Desk 31",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Viraj Chorghe",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 32",
+      "label": "Desk 32",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Varun Lalka",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 33",
+      "label": "Desk 33",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Darryl Gomes",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 34",
+      "label": "Desk 34",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Ashok Chatla",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 35",
+      "label": "Desk 35",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Raj Kolambkar",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 36",
+      "label": "Desk 36",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Avishkar Mandavkar",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 37",
+      "label": "Desk 37",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Bhaskar Wooragonda",
+        "department": "Flims"
+      },
+      "department": "Films",
+      "table": "Table 4",
+      "color": null
+    },
+    {
+      "id": "Desk 38",
+      "label": "Desk 38",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Dattaram Kambli",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 39",
+      "label": "Desk 39",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Biju Dasan",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 40",
+      "label": "Desk 40",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Uday Panchal",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 41",
+      "label": "Desk 41",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Ashish Kumbhar",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 42",
+      "label": "Desk 42",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Navnath Bhere",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 43",
+      "label": "Desk 43",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Rajesh K Bhardwaj",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 44",
+      "label": "Desk 44",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Abhishek Shelar",
+        "department": "Studio"
+      },
+      "department": "Studio",
+      "table": "Table 5",
+      "color": null
+    },
+    {
+      "id": "Desk 45",
+      "label": "Desk 45",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Meghna Gambhir",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 46",
+      "label": "Desk 46",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Amaan Khan",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 47",
+      "label": "Desk 47",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Mohit Devganiya",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 48",
+      "label": "Desk 48",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Prem Gohil",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 49",
+      "label": "Desk 49",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Gaurav Gohil",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 50",
+      "label": "Desk 50",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Nitesh Kumar",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 51",
+      "label": "Desk 51",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Aanchal Choudhary",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 52",
+      "label": "Desk 52",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Jennifer Sequeira",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 53",
+      "label": "Desk 53",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Vidya Sridhar",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 54",
+      "label": "Desk 54",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Mahesh Tanawde",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 55",
+      "label": "Desk 55",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Yatin Ashok Mhatre",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    },
+    {
+      "id": "Desk 56",
+      "label": "Desk 56",
+      "floor": "main-floor",
+      "status": "occupied",
+      "occupant": {
+        "name": "Akshita Datir",
+        "department": "Digital"
+      },
+      "department": "Digital",
+      "table": "Table 6",
+      "color": null
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "name": "Sujay Bhonsle",
+      "department": "CS",
+      "seat": "Desk 1",
+      "table": "Table 1",
+      "checkIn": "09:11 AM",
+      "wfh": false
+    },
+    {
+      "id": 2,
+      "name": "Smriti Tewari",
+      "department": "CS",
+      "seat": "Desk 2",
+      "table": "Table 1",
+      "checkIn": "09:12 AM",
+      "wfh": false
+    },
+    {
+      "id": 3,
+      "name": "Blaise Vaz",
+      "department": "CS",
+      "seat": "Desk 3",
+      "table": "Table 1",
+      "checkIn": "09:13 AM",
+      "wfh": false
+    },
+    {
+      "id": 4,
+      "name": "Viraj Chorghe",
+      "department": "Flims",
+      "seat": "Desk 31",
+      "table": "Table 4",
+      "checkIn": "09:14 AM",
+      "wfh": false
+    },
+    {
+      "id": 5,
+      "name": "Varun Lalka",
+      "department": "Flims",
+      "seat": "Desk 32",
+      "table": "Table 4",
+      "checkIn": "09:15 AM",
+      "wfh": false
+    },
+    {
+      "id": 6,
+      "name": "Darryl Gomes",
+      "department": "Flims",
+      "seat": "Desk 33",
+      "table": "Table 4",
+      "checkIn": "09:16 AM",
+      "wfh": false
+    },
+    {
+      "id": 7,
+      "name": "Ashok Chatla",
+      "department": "Flims",
+      "seat": "Desk 34",
+      "table": "Table 4",
+      "checkIn": "09:17 AM",
+      "wfh": false
+    },
+    {
+      "id": 8,
+      "name": "Raj Kolambkar",
+      "department": "Flims",
+      "seat": "Desk 35",
+      "table": "Table 4",
+      "checkIn": "09:18 AM",
+      "wfh": false
+    },
+    {
+      "id": 9,
+      "name": "Avishkar Mandavkar",
+      "department": "Flims",
+      "seat": "Desk 36",
+      "table": "Table 4",
+      "checkIn": "09:19 AM",
+      "wfh": false
+    },
+    {
+      "id": 10,
+      "name": "Bhaskar Wooragonda",
+      "department": "Flims",
+      "seat": "Desk 37",
+      "table": "Table 4",
+      "checkIn": "09:20 AM",
+      "wfh": false
+    },
+    {
+      "id": 11,
+      "name": "Rupesh Doiphode",
+      "department": "Art",
+      "seat": "Desk 13",
+      "table": "Table 2",
+      "checkIn": "09:21 AM",
+      "wfh": false
+    },
+    {
+      "id": 12,
+      "name": "Yogesh More",
+      "department": "Art",
+      "seat": "Desk 14",
+      "table": "Table 2",
+      "checkIn": "09:22 AM",
+      "wfh": false
+    },
+    {
+      "id": 13,
+      "name": "Rahul Kumawat",
+      "department": "Art",
+      "seat": "Desk 15",
+      "table": "Table 2",
+      "checkIn": "09:23 AM",
+      "wfh": false
+    },
+    {
+      "id": 14,
+      "name": "Masumi Shrimankar",
+      "department": "Art",
+      "seat": "Desk 16",
+      "table": "Table 2",
+      "checkIn": "09:24 AM",
+      "wfh": false
+    },
+    {
+      "id": 15,
+      "name": "Dhruvi Shah",
+      "department": "Art",
+      "seat": "Desk 17",
+      "table": "Table 2",
+      "checkIn": "09:25 AM",
+      "wfh": false
+    },
+    {
+      "id": 16,
+      "name": "Sonali Sawant",
+      "department": "Art",
+      "seat": "Desk 18",
+      "table": "Table 2",
+      "checkIn": "09:26 AM",
+      "wfh": false
+    },
+    {
+      "id": 17,
+      "name": "Sushant Agare",
+      "department": "Art",
+      "seat": "Desk 19",
+      "table": "Table 2",
+      "checkIn": "09:27 AM",
+      "wfh": false
+    },
+    {
+      "id": 18,
+      "name": "Amey Lad",
+      "department": "Art",
+      "seat": "Desk 20",
+      "table": "Table 2",
+      "checkIn": "09:28 AM",
+      "wfh": false
+    },
+    {
+      "id": 19,
+      "name": "Kiran Salkar",
+      "department": "Art",
+      "seat": "Desk 21",
+      "table": "Table 2",
+      "checkIn": "09:29 AM",
+      "wfh": false
+    },
+    {
+      "id": 20,
+      "name": "Atharva Salvi",
+      "department": "Art",
+      "seat": "Desk 22",
+      "table": "Table 2",
+      "checkIn": "09:30 AM",
+      "wfh": false
+    },
+    {
+      "id": 21,
+      "name": "Siya Pandit",
+      "department": "Art",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:31 AM",
+      "wfh": true
+    },
+    {
+      "id": 22,
+      "name": "Sumedh Sawant",
+      "department": "Art",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:32 AM",
+      "wfh": true
+    },
+    {
+      "id": 23,
+      "name": "Subodh Chaubey",
+      "department": "Copy",
+      "seat": "Desk 23",
+      "table": "Table 3",
+      "checkIn": "09:33 AM",
+      "wfh": false
+    },
+    {
+      "id": 24,
+      "name": "Ryan Parkar",
+      "department": "Copy",
+      "seat": "Desk 24",
+      "table": "Table 3",
+      "checkIn": "09:34 AM",
+      "wfh": false
+    },
+    {
+      "id": 25,
+      "name": "Ritwik Mishra",
+      "department": "Copy",
+      "seat": "Desk 25",
+      "table": "Table 3",
+      "checkIn": "09:35 AM",
+      "wfh": false
+    },
+    {
+      "id": 26,
+      "name": "Sanjit Samant",
+      "department": "Copy",
+      "seat": "Desk 26",
+      "table": "Table 3",
+      "checkIn": "09:36 AM",
+      "wfh": false
+    },
+    {
+      "id": 27,
+      "name": "Anarghya Poojary",
+      "department": "Copy",
+      "seat": "Desk 27",
+      "table": "Table 3",
+      "checkIn": "09:37 AM",
+      "wfh": false
+    },
+    {
+      "id": 28,
+      "name": "Juhi Pravin Shah",
+      "department": "Copy",
+      "seat": "Desk 28",
+      "table": "Table 3",
+      "checkIn": "09:38 AM",
+      "wfh": false
+    },
+    {
+      "id": 29,
+      "name": "Gaurav Pant",
+      "department": "Copy",
+      "seat": "Desk 29",
+      "table": "Table 3",
+      "checkIn": "09:39 AM",
+      "wfh": false
+    },
+    {
+      "id": 30,
+      "name": "Aditya Salve",
+      "department": "Copy",
+      "seat": "Desk 30",
+      "table": "Table 3",
+      "checkIn": "09:40 AM",
+      "wfh": false
+    },
+    {
+      "id": 31,
+      "name": "Jyoti Nair",
+      "department": "CS",
+      "seat": "Desk 4",
+      "table": "Table 1",
+      "checkIn": "09:41 AM",
+      "wfh": false
+    },
+    {
+      "id": 32,
+      "name": "Bhagyashree Shah",
+      "department": "CS",
+      "seat": "Desk 5",
+      "table": "Table 1",
+      "checkIn": "09:42 AM",
+      "wfh": false
+    },
+    {
+      "id": 33,
+      "name": "Nilesh Singh Bashera",
+      "department": "CS",
+      "seat": "Desk 6",
+      "table": "Table 1",
+      "checkIn": "09:43 AM",
+      "wfh": false
+    },
+    {
+      "id": 34,
+      "name": "Chandni Upadhyay",
+      "department": "CS",
+      "seat": "Desk 7",
+      "table": "Table 1",
+      "checkIn": "09:44 AM",
+      "wfh": false
+    },
+    {
+      "id": 35,
+      "name": "Pranjal Agarwal",
+      "department": "CS",
+      "seat": "Desk 8",
+      "table": "Table 1",
+      "checkIn": "09:45 AM",
+      "wfh": false
+    },
+    {
+      "id": 36,
+      "name": "Srushti Chawhan",
+      "department": "CS",
+      "seat": "Desk 9",
+      "table": "Table 1",
+      "checkIn": "09:46 AM",
+      "wfh": false
+    },
+    {
+      "id": 37,
+      "name": "Nathanial Siqueira Vaz",
+      "department": "CS",
+      "seat": "Desk 10",
+      "table": "Table 1",
+      "checkIn": "09:47 AM",
+      "wfh": false
+    },
+    {
+      "id": 38,
+      "name": "Dhruti Maru",
+      "department": "CS",
+      "seat": "Desk 11",
+      "table": "Table 1",
+      "checkIn": "09:48 AM",
+      "wfh": false
+    },
+    {
+      "id": 39,
+      "name": "Dhyan Ramnani",
+      "department": "CS",
+      "seat": "Desk 12",
+      "table": "Table 1",
+      "checkIn": "09:49 AM",
+      "wfh": false
+    },
+    {
+      "id": 40,
+      "name": "Jayalaxmi Ravi",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:10 AM",
+      "wfh": true
+    },
+    {
+      "id": 41,
+      "name": "Abhay Khabale",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:11 AM",
+      "wfh": true
+    },
+    {
+      "id": 42,
+      "name": "Steffi Barboza",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:12 AM",
+      "wfh": true
+    },
+    {
+      "id": 43,
+      "name": "Tarun Kamath",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:13 AM",
+      "wfh": true
+    },
+    {
+      "id": 44,
+      "name": "Kshitij Bidvai",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:14 AM",
+      "wfh": true
+    },
+    {
+      "id": 45,
+      "name": "Anoushka Kabre",
+      "department": "CS",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:15 AM",
+      "wfh": true
+    },
+    {
+      "id": 46,
+      "name": "Dattaram Kambli",
+      "department": "Studio",
+      "seat": "Desk 38",
+      "table": "Table 5",
+      "checkIn": "09:16 AM",
+      "wfh": false
+    },
+    {
+      "id": 47,
+      "name": "Biju Dasan",
+      "department": "Studio",
+      "seat": "Desk 39",
+      "table": "Table 5",
+      "checkIn": "09:17 AM",
+      "wfh": false
+    },
+    {
+      "id": 48,
+      "name": "Uday Panchal",
+      "department": "Studio",
+      "seat": "Desk 40",
+      "table": "Table 5",
+      "checkIn": "09:18 AM",
+      "wfh": false
+    },
+    {
+      "id": 49,
+      "name": "Ashish Kumbhar",
+      "department": "Studio",
+      "seat": "Desk 41",
+      "table": "Table 5",
+      "checkIn": "09:19 AM",
+      "wfh": false
+    },
+    {
+      "id": 50,
+      "name": "Navnath Bhere",
+      "department": "Studio",
+      "seat": "Desk 42",
+      "table": "Table 5",
+      "checkIn": "09:20 AM",
+      "wfh": false
+    },
+    {
+      "id": 51,
+      "name": "Rajesh K Bhardwaj",
+      "department": "Studio",
+      "seat": "Desk 43",
+      "table": "Table 5",
+      "checkIn": "09:21 AM",
+      "wfh": false
+    },
+    {
+      "id": 52,
+      "name": "Abhishek Shelar",
+      "department": "Studio",
+      "seat": "Desk 44",
+      "table": "Table 5",
+      "checkIn": "09:22 AM",
+      "wfh": false
+    },
+    {
+      "id": 53,
+      "name": "Sunil Saundalkar",
+      "department": "Studio",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:23 AM",
+      "wfh": true
+    },
+    {
+      "id": 54,
+      "name": "Meghna Gambhir",
+      "department": "Digital",
+      "seat": "Desk 45",
+      "table": "Table 6",
+      "checkIn": "09:24 AM",
+      "wfh": false
+    },
+    {
+      "id": 55,
+      "name": "Amaan Khan",
+      "department": "Digital",
+      "seat": "Desk 46",
+      "table": "Table 6",
+      "checkIn": "09:25 AM",
+      "wfh": false
+    },
+    {
+      "id": 56,
+      "name": "Mohit Devganiya",
+      "department": "Digital",
+      "seat": "Desk 47",
+      "table": "Table 6",
+      "checkIn": "09:26 AM",
+      "wfh": false
+    },
+    {
+      "id": 57,
+      "name": "Prem Gohil",
+      "department": "Digital",
+      "seat": "Desk 48",
+      "table": "Table 6",
+      "checkIn": "09:27 AM",
+      "wfh": false
+    },
+    {
+      "id": 58,
+      "name": "Gaurav Gohil",
+      "department": "Digital",
+      "seat": "Desk 49",
+      "table": "Table 6",
+      "checkIn": "09:28 AM",
+      "wfh": false
+    },
+    {
+      "id": 59,
+      "name": "Nitesh Kumar",
+      "department": "Digital",
+      "seat": "Desk 50",
+      "table": "Table 6",
+      "checkIn": "09:29 AM",
+      "wfh": false
+    },
+    {
+      "id": 60,
+      "name": "Aanchal Choudhary",
+      "department": "Digital",
+      "seat": "Desk 51",
+      "table": "Table 6",
+      "checkIn": "09:30 AM",
+      "wfh": false
+    },
+    {
+      "id": 61,
+      "name": "Jennifer Sequeira",
+      "department": "Digital",
+      "seat": "Desk 52",
+      "table": "Table 6",
+      "checkIn": "09:31 AM",
+      "wfh": false
+    },
+    {
+      "id": 62,
+      "name": "Vidya Sridhar",
+      "department": "Digital",
+      "seat": "Desk 53",
+      "table": "Table 6",
+      "checkIn": "09:32 AM",
+      "wfh": false
+    },
+    {
+      "id": 63,
+      "name": "Mahesh Tanawde",
+      "department": "Digital",
+      "seat": "Desk 54",
+      "table": "Table 6",
+      "checkIn": "09:33 AM",
+      "wfh": false
+    },
+    {
+      "id": 64,
+      "name": "Yatin Ashok Mhatre",
+      "department": "Digital",
+      "seat": "Desk 55",
+      "table": "Table 6",
+      "checkIn": "09:34 AM",
+      "wfh": false
+    },
+    {
+      "id": 65,
+      "name": "Akshita Datir",
+      "department": "Digital",
+      "seat": "Desk 56",
+      "table": "Table 6",
+      "checkIn": "09:35 AM",
+      "wfh": false
+    },
+    {
+      "id": 66,
+      "name": "Intern 1",
+      "department": "Digital",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:36 AM",
+      "wfh": true
+    },
+    {
+      "id": 67,
+      "name": "Intern 2",
+      "department": "Digital",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:36 AM",
+      "wfh": true
+    },
+    {
+      "id": 68,
+      "name": "Intern 3",
+      "department": "Digital",
+      "seat": null,
+      "table": "No desk",
+      "checkIn": "09:36 AM",
+      "wfh": true
+    }
+  ]
+}

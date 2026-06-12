@@ -7,9 +7,19 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Parallax decorative background layer -->
+  <div class="parallax-bg" aria-hidden="true">
+    <span class="orb orb-1" data-depth="0.10"></span>
+    <span class="orb orb-2" data-depth="0.18"></span>
+    <span class="orb orb-3" data-depth="0.06"></span>
+    <span class="orb orb-4" data-depth="0.14"></span>
+    <div class="grid-overlay"></div>
+  </div>
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand">Smart Office Seat Occupancy</div>
+      <div class="brand"><span class="brand-mark">◧</span> Smart Office <span class="brand-accent">Seat Occupancy</span></div>
       <nav class="nav-links">
         <button id="view-map" class="nav-btn active">Live Floor Map</button>
         <button id="view-directory" class="nav-btn">Employee Directory</button>
@@ -78,44 +88,10 @@
             <span><em class="legend-dot reserved"></em> Reserved</span>
           </div>
           <div class="refresh-note">Auto-refresh every 10 seconds</div>
-          <div id="chair-palette" class="chair-palette hidden">
-            <div
-              id="drag-chair-source"
-              class="draggable-chair"
-              draggable="true"
-              title="Drag onto the floor map to add a new desk"
-            >
-              &#x1FA91; Drag to Add Desk
-            </div>
-          </div>
         </section>
 
         <section class="floor-map" id="floor-map"></section>
       </section>
-
-      <!-- Add Desk Modal -->
-      <div id="add-desk-modal" class="add-desk-modal hidden">
-        <div class="add-desk-modal-box">
-          <h3 style="margin:0 0 16px;">Configure New Desk</h3>
-          <input type="hidden" id="new-desk-id-val" />
-          <label class="add-desk-field">
-            <span>Desk Label</span>
-            <input id="new-desk-label" type="text" placeholder="e.g. Desk 57" />
-          </label>
-          <label class="add-desk-field">
-            <span>Table</span>
-            <select id="new-desk-table"></select>
-          </label>
-          <label class="add-desk-field">
-            <span>Department</span>
-            <select id="new-desk-dept"></select>
-          </label>
-          <div class="add-desk-actions">
-            <button class="btn primary" onclick="confirmAddDesk()">Add Desk</button>
-            <button class="btn secondary" onclick="cancelAddDesk()">Cancel</button>
-          </div>
-        </div>
-      </div>
 
       <section id="panel-directory" class="panel">
         <div class="directory-header">
@@ -146,13 +122,21 @@
        <section id="panel-requirements" class="panel">
         <div class="requirements-card">
           <h2>Project Requirements Summary</h2>
-          <p>This system is designed for a single-office location with a flexible desk model and a total of 56 available seats across 6 modular tables.</p>
+          <p>This system is designed for a single-office location with a flexible desk model and a total of 60 available seats across 6 modular tables, each seating 10 (two team rows of 5).</p>
           <ul>
-            <li>Total staff: <strong>66</strong></li>
-            <li>Total seat capacity: <strong>56 desks</strong></li>
+            <li>Total seat capacity: <strong>60 desks</strong> — 6 tables × 10 seats</li>
             <li>Flexible seating arrangement with admin-controlled Work From Home (WFH) adjustment</li>
-            <li>Reserved seats for HR, IT, and Finance in Table 6</li>
-            <li>Separate zones: Client Servicing (Table 1), Creative Art (Table 2), Copywriting (Table 3), Films (Table 4), Studio (Table 5), Digital & Support (Table 6)</li>
+            <li>Team zones by table row:
+              <ul>
+                <li>Table 1 — BKT &amp; AMEX 1</li>
+                <li>Table 2 — Art</li>
+                <li>Table 3 — Studio</li>
+                <li>Table 4 — AMEX 2 &amp; EBCO</li>
+                <li>Table 5 — UnderArmour &amp; Nat GEO</li>
+                <li>Table 6 — VYOMA &amp; Finance/HR</li>
+              </ul>
+            </li>
+            <li>Admins can assign, release, recolour and delete seats from the visual layout</li>
             <li>Meeting room seats are excluded</li>
           </ul>
           <p>The app includes:</p>
@@ -212,9 +196,6 @@
                   <button id="admin-nav-add" class="admin-nav-btn">
                     <span class="icon">➕</span> Add New Member
                   </button>
-                  <button id="admin-nav-tables" class="admin-nav-btn">
-                    <span class="icon">🗂️</span> Table Settings
-                  </button>
                 </nav>
               </aside>
 
@@ -232,8 +213,26 @@
                 <!-- Tab 1: Seat Status Control -->
                 <div id="admin-tab-seats" class="admin-tab-content active">
                   <div class="admin-card">
-                    <h3>Seat Control Panel</h3>
-                    <div class="admin-table-wrapper">
+                    <div class="admin-card-head">
+                      <h3>Seat Control Panel</h3>
+                      <div class="seat-view-toggle">
+                        <button id="admin-seat-view-visual" class="seat-view-btn active">🪑 Visual Layout</button>
+                        <button id="admin-seat-view-list" class="seat-view-btn">☰ List</button>
+                      </div>
+                    </div>
+
+                    <div class="seat-legend">
+                      <span><em class="legend-dot free"></em> Free</span>
+                      <span><em class="legend-dot occupied"></em> Occupied</span>
+                      <span><em class="legend-dot reserved"></em> Reserved</span>
+                      <span class="seat-legend-hint">Click a seat to assign or release it</span>
+                    </div>
+
+                    <!-- Visual seat arrangement -->
+                    <div id="admin-seat-visual" class="admin-seat-visual"></div>
+
+                    <!-- List view (hidden by default) -->
+                    <div id="admin-seat-list" class="admin-table-wrapper hidden">
                       <table class="admin-table">
                         <thead>
                           <tr>
@@ -265,7 +264,6 @@
                             <th>Table</th>
                             <th>Seat</th>
                             <th>Status</th>
-                            <th>Edit</th>
                             <th>Remove</th>
                           </tr>
                         </thead>
@@ -273,11 +271,6 @@
                       </table>
                     </div>
                   </div>
-                </div>
-
-                <!-- Tab 4: Table Settings -->
-                <div id="admin-tab-tables" class="admin-tab-content">
-                  <!-- populated by renderAdminTableSettings() -->
                 </div>
 
                 <!-- Tab 3: Add Employee Form -->
@@ -290,32 +283,19 @@
                         <input id="employee-name" type="text" placeholder="e.g. John Doe" required />
                       </div>
                       <div class="form-group">
-                        <label for="employee-dept">Department / Project</label>
+                        <label for="employee-dept">Department</label>
                         <select id="employee-dept" required>
                           <!-- Dynamic options will be loaded here -->
                         </select>
                       </div>
                       <div class="form-group">
-                        <label for="employee-table">Assign to Table</label>
-                        <select id="employee-table">
-                          <option value="">-- No Table (WFH) --</option>
-                          <!-- Dynamic list of tables -->
-                        </select>
-                      </div>
-                      <div class="form-group">
                         <label for="employee-seat">Assign Desk (Optional)</label>
                         <select id="employee-seat">
-                          <option value="">-- No Fixed Desk --</option>
+                          <option value="">-- Working from Home (No Seat) --</option>
                           <!-- Dynamic list of free desks -->
                         </select>
                       </div>
-                      <div class="form-group">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                          <input id="employee-wfh" type="checkbox" />
-                          Working from Home
-                        </label>
-                      </div>
-                      <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Add Employee</button>
+                      <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Check In / Add</button>
                     </form>
                   </div>
                 </div>
@@ -330,39 +310,6 @@
   <template id="seat-tooltip-template">
     <div class="seat-tooltip"></div>
   </template>
-
-  <!-- Edit Employee Modal -->
-  <div id="edit-employee-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <h3>Edit Employee</h3>
-      <div class="form-group">
-        <label for="edit-emp-name">Full Name</label>
-        <input id="edit-emp-name" type="text" placeholder="Employee name" />
-      </div>
-      <div class="form-group">
-        <label for="edit-emp-dept">Department / Project</label>
-        <select id="edit-emp-dept"></select>
-      </div>
-      <div class="form-group">
-        <label for="edit-emp-table">Assign to Table</label>
-        <select id="edit-emp-table"></select>
-      </div>
-      <div class="form-group">
-        <label for="edit-emp-seat">Assign Desk (Optional)</label>
-        <select id="edit-emp-seat"></select>
-      </div>
-      <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input id="edit-emp-wfh" type="checkbox" />
-          Working from Home
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button class="btn primary" onclick="saveEditEmployee()">Save Changes</button>
-        <button class="btn secondary" onclick="closeEditModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>

@@ -25,30 +25,7 @@ const state = {
   panY: 0,
   isDraggingMap: false,
   dragStart: { x: 0, y: 0 },
-  searchQuery: '',
-  editingEmployeeId: null,
-  customSeatPositions: {},  // { 'Desk 57': { x, y, dir } }
-  pendingNewDesk: null,     // { x, y } while modal is open
-  tableNames: {
-    'Table 1': 'Table 1',
-    'Table 2': 'Table 2',
-    'Table 3': 'Table 3',
-    'Table 4': 'Table 4',
-    'Table 5': 'Table 5',
-    'Table 6': 'Table 6',
-    'Table 7': 'Table 7',
-  },
-  deptNames: {
-    'CS': 'CS',
-    'Art': 'Art',
-    'Copy': 'Copy',
-    'Production': 'Production',
-    'Studio': 'Studio',
-    'Digital': 'Digital',
-    'HR': 'HR',
-    'Finance': 'Finance',
-    'IT': 'IT',
-  },
+  searchQuery: ''
 };
 
 const seatStatuses = ['free', 'occupied', 'reserved'];
@@ -67,151 +44,169 @@ try {
 }
 
 const mockEmployees = [
-  // ── Table 1 — CS (Desks 4–12 occupied; Desks 1–3 moved to Table 7) ──────────
-  { id: 31, name: 'Jyoti Nair',             department: 'CS',         seat: 'Desk 4',  table: 'Table 1', checkIn: '09:41 AM', wfh: false },
-  { id: 32, name: 'Bhagyashree Shah',        department: 'CS',         seat: 'Desk 5',  table: 'Table 1', checkIn: '09:42 AM', wfh: false },
-  { id: 33, name: 'Nilesh Singh Bashera',    department: 'CS',         seat: 'Desk 6',  table: 'Table 1', checkIn: '09:43 AM', wfh: false },
-  { id: 34, name: 'Chandni Upadhyay',        department: 'CS',         seat: 'Desk 7',  table: 'Table 1', checkIn: '09:44 AM', wfh: false },
-  { id: 35, name: 'Pranjal Agarwal',         department: 'CS',         seat: 'Desk 8',  table: 'Table 1', checkIn: '09:45 AM', wfh: false },
-  { id: 36, name: 'Srushti Chawhan',         department: 'CS',         seat: 'Desk 9',  table: 'Table 1', checkIn: '09:46 AM', wfh: false },
-  { id: 37, name: 'Nathanial Siqueira Vaz',  department: 'CS',         seat: 'Desk 10', table: 'Table 1', checkIn: '09:47 AM', wfh: false },
-  { id: 38, name: 'Dhruti Maru',             department: 'CS',         seat: 'Desk 11', table: 'Table 1', checkIn: '09:48 AM', wfh: false },
-  { id: 39, name: 'Dhyan Ramnani',           department: 'CS',         seat: 'Desk 12', table: 'Table 1', checkIn: '09:49 AM', wfh: false },
-  // ── Table 2 — Art (all 10 desks occupied) ────────────────────────────────────
-  { id: 11, name: 'Rupesh Doiphode',         department: 'Art',        seat: 'Desk 13', table: 'Table 2', checkIn: '09:21 AM', wfh: false },
-  { id: 12, name: 'Yogesh More',             department: 'Art',        seat: 'Desk 14', table: 'Table 2', checkIn: '09:22 AM', wfh: false },
-  { id: 13, name: 'Rahul Kumawat',           department: 'Art',        seat: 'Desk 15', table: 'Table 2', checkIn: '09:23 AM', wfh: false },
-  { id: 14, name: 'Masumi Shrimankar',       department: 'Art',        seat: 'Desk 16', table: 'Table 2', checkIn: '09:24 AM', wfh: false },
-  { id: 15, name: 'Dhruvi Shah',             department: 'Art',        seat: 'Desk 17', table: 'Table 2', checkIn: '09:25 AM', wfh: false },
-  { id: 16, name: 'Sonali Sawant',           department: 'Art',        seat: 'Desk 18', table: 'Table 2', checkIn: '09:26 AM', wfh: false },
-  { id: 17, name: 'Sushant Agare',           department: 'Art',        seat: 'Desk 19', table: 'Table 2', checkIn: '09:27 AM', wfh: false },
-  { id: 18, name: 'Amey Lad',               department: 'Art',        seat: 'Desk 20', table: 'Table 2', checkIn: '09:28 AM', wfh: false },
-  { id: 19, name: 'Kiran Salkar',            department: 'Art',        seat: 'Desk 21', table: 'Table 2', checkIn: '09:29 AM', wfh: false },
-  { id: 20, name: 'Atharva Salvi',           department: 'Art',        seat: 'Desk 22', table: 'Table 2', checkIn: '09:30 AM', wfh: false },
-  // ── Table 3 — Copy (Desks 25–30 occupied; Desks 23–24 moved to Table 7) ─────
-  { id: 25, name: 'Ritwik Mishra',           department: 'Copy',       seat: 'Desk 25', table: 'Table 3', checkIn: '09:35 AM', wfh: false },
-  { id: 26, name: 'Sanjit Samant',           department: 'Copy',       seat: 'Desk 26', table: 'Table 3', checkIn: '09:36 AM', wfh: false },
-  { id: 27, name: 'Anarghya Poojary',        department: 'Copy',       seat: 'Desk 27', table: 'Table 3', checkIn: '09:37 AM', wfh: false },
-  { id: 28, name: 'Juhi Pravin Shah',        department: 'Copy',       seat: 'Desk 28', table: 'Table 3', checkIn: '09:38 AM', wfh: false },
-  { id: 29, name: 'Gaurav Pant',             department: 'Copy',       seat: 'Desk 29', table: 'Table 3', checkIn: '09:39 AM', wfh: false },
-  { id: 30, name: 'Aditya Salve',            department: 'Copy',       seat: 'Desk 30', table: 'Table 3', checkIn: '09:40 AM', wfh: false },
-  // ── Table 5 — Studio (Desks 40–44 occupied; Desks 38–39 moved to Table 7) ───
-  { id: 48, name: 'Uday Panchal',            department: 'Studio',     seat: 'Desk 40', table: 'Table 5', checkIn: '09:18 AM', wfh: false },
-  { id: 49, name: 'Ashish Kumbhar',          department: 'Studio',     seat: 'Desk 41', table: 'Table 5', checkIn: '09:19 AM', wfh: false },
-  { id: 50, name: 'Navnath Bhere',           department: 'Studio',     seat: 'Desk 42', table: 'Table 5', checkIn: '09:20 AM', wfh: false },
-  { id: 51, name: 'Rajesh K Bhardwaj',       department: 'Studio',     seat: 'Desk 43', table: 'Table 5', checkIn: '09:21 AM', wfh: false },
-  { id: 52, name: 'Abhishek Shelar',         department: 'Studio',     seat: 'Desk 44', table: 'Table 5', checkIn: '09:22 AM', wfh: false },
-  // ── Table 6 — Digital & Support ──────────────────────────────────────────────
-  { id: 54, name: 'Meghna Gambhir',          department: 'Digital',    seat: 'Desk 45', table: 'Table 6', checkIn: '09:24 AM', wfh: false },
-  { id: 55, name: 'Amaan Khan',              department: 'Digital',    seat: 'Desk 46', table: 'Table 6', checkIn: '09:25 AM', wfh: false },
-  { id: 56, name: 'Mohit Devganiya',         department: 'Digital',    seat: 'Desk 47', table: 'Table 6', checkIn: '09:26 AM', wfh: false },
-  { id: 57, name: 'Prem Gohil',              department: 'Digital',    seat: 'Desk 48', table: 'Table 6', checkIn: '09:27 AM', wfh: false },
-  { id: 58, name: 'Gaurav Gohil',            department: 'Digital',    seat: 'Desk 49', table: 'Table 6', checkIn: '09:28 AM', wfh: false },
-  { id: 60, name: 'Aanchal Choudhary',       department: 'Digital',    seat: 'Desk 51', table: 'Table 6', checkIn: '09:30 AM', wfh: false },
-  { id: 61, name: 'Jennifer Sequeira',       department: 'HR',         seat: 'Desk 52', table: 'Table 6', checkIn: '09:31 AM', wfh: false },
-  { id: 62, name: 'Vidya Sridhar',           department: 'Finance',    seat: 'Desk 53', table: 'Table 6', checkIn: '09:32 AM', wfh: false },
-  { id: 63, name: 'Mahesh Tanawde',          department: 'Finance',    seat: 'Desk 54', table: 'Table 6', checkIn: '09:33 AM', wfh: false },
-  { id: 64, name: 'Yatin Ashok Mhatre',      department: 'IT',         seat: 'Desk 55', table: 'Table 6', checkIn: '09:34 AM', wfh: false },
-  // ── Table 7 — No fixed desk (in office, hotdesking) ──────────────────────────
-  { id: 1,  name: 'Sujay Bhonsle',           department: 'CS',         seat: null, table: 'Table 7', checkIn: '09:11 AM', wfh: false },
-  { id: 2,  name: 'Smriti Tewari',           department: 'CS',         seat: null, table: 'Table 7', checkIn: '09:12 AM', wfh: false },
-  { id: 3,  name: 'Blaise Vaz',              department: 'CS',         seat: null, table: 'Table 7', checkIn: '09:13 AM', wfh: false },
-  { id: 4,  name: 'Viraj Chorghe',           department: 'Production', seat: null, table: 'Table 7', checkIn: '09:14 AM', wfh: false },
-  { id: 5,  name: 'Varun Lalka',             department: 'Production', seat: null, table: 'Table 7', checkIn: '09:15 AM', wfh: false },
-  { id: 6,  name: 'Darryl Gomes',            department: 'Production', seat: null, table: 'Table 7', checkIn: '09:16 AM', wfh: false },
-  { id: 7,  name: 'Ashok Chatla',            department: 'Production', seat: null, table: 'Table 7', checkIn: '09:17 AM', wfh: false },
-  { id: 8,  name: 'Raj Kolambkar',           department: 'Production', seat: null, table: 'Table 7', checkIn: '09:18 AM', wfh: false },
-  { id: 9,  name: 'Avishkar Mandavkar',      department: 'Production', seat: null, table: 'Table 7', checkIn: '09:19 AM', wfh: false },
-  { id: 10, name: 'Bhaskar Wooragonda',      department: 'Production', seat: null, table: 'Table 7', checkIn: '09:20 AM', wfh: false },
-  { id: 23, name: 'Subodh Chaubey',          department: 'Copy',       seat: null, table: 'Table 7', checkIn: '09:33 AM', wfh: false },
-  { id: 24, name: 'Ryan Parkar',             department: 'Copy',       seat: null, table: 'Table 7', checkIn: '09:34 AM', wfh: false },
-  { id: 46, name: 'Dattaram Kambli',         department: 'Studio',     seat: null, table: 'Table 7', checkIn: '09:16 AM', wfh: false },
-  { id: 47, name: 'Biju Dasan',              department: 'Studio',     seat: null, table: 'Table 7', checkIn: '09:17 AM', wfh: false },
-  { id: 59, name: 'Nitesh Kumar',            department: 'Digital',    seat: null, table: 'Table 7', checkIn: '09:29 AM', wfh: false },
-  { id: 65, name: 'Akshita Datir',           department: 'Digital',    seat: null, table: 'Table 7', checkIn: '09:35 AM', wfh: false },
-  // ── WFH / Remote ──────────────────────────────────────────────────────────────
-  { id: 21, name: 'Siya Pandit',             department: 'Art',        seat: null, table: 'No desk', checkIn: '09:31 AM', wfh: true },
-  { id: 22, name: 'Sumedh Sawant',           department: 'Art',        seat: null, table: 'No desk', checkIn: '09:32 AM', wfh: true },
-  { id: 40, name: 'Jayalaxmi Ravi',          department: 'CS',         seat: null, table: 'No desk', checkIn: '09:10 AM', wfh: true },
-  { id: 41, name: 'Abhay Khabale',           department: 'CS',         seat: null, table: 'No desk', checkIn: '09:11 AM', wfh: true },
-  { id: 42, name: 'Steffi Barboza',          department: 'CS',         seat: null, table: 'No desk', checkIn: '09:12 AM', wfh: true },
-  { id: 43, name: 'Tarun Kamath',            department: 'CS',         seat: null, table: 'No desk', checkIn: '09:13 AM', wfh: true },
-  { id: 44, name: 'Kshitij Bidvai',          department: 'Digital',    seat: null, table: 'No desk', checkIn: '09:14 AM', wfh: true },
-  { id: 45, name: 'Anoushka Kabre',          department: 'CS',         seat: null, table: 'No desk', checkIn: '09:15 AM', wfh: true },
-  { id: 53, name: 'Sunil Saundalkar',        department: 'Studio',     seat: null, table: 'No desk', checkIn: '09:23 AM', wfh: true },
-  { id: 66, name: 'Krish Shetty',            department: 'CS',         seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
-  { id: 67, name: 'Dhyani Shah',             department: 'CS',         seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
-  { id: 68, name: 'Aayush Munshi',           department: 'CS',         seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
+  { id: 1, name: 'Sujay Bhonsle', department: 'CS', seat: 'Desk 1', table: 'Table 1', checkIn: '09:11 AM', wfh: false },
+  { id: 2, name: 'Smriti Tewari', department: 'CS', seat: 'Desk 2', table: 'Table 1', checkIn: '09:12 AM', wfh: false },
+  { id: 3, name: 'Blaise Vaz', department: 'CS', seat: 'Desk 3', table: 'Table 1', checkIn: '09:13 AM', wfh: false },
+  { id: 31, name: 'Jyoti Nair', department: 'CS', seat: 'Desk 4', table: 'Table 1', checkIn: '09:41 AM', wfh: false },
+  { id: 32, name: 'Bhagyashree Shah', department: 'CS', seat: 'Desk 5', table: 'Table 1', checkIn: '09:42 AM', wfh: false },
+  { id: 33, name: 'Nilesh Singh Bashera', department: 'CS', seat: 'Desk 6', table: 'Table 1', checkIn: '09:43 AM', wfh: false },
+  { id: 34, name: 'Chandni Upadhyay', department: 'CS', seat: 'Desk 7', table: 'Table 1', checkIn: '09:44 AM', wfh: false },
+  { id: 35, name: 'Pranjal Agarwal', department: 'CS', seat: 'Desk 8', table: 'Table 1', checkIn: '09:45 AM', wfh: false },
+  { id: 36, name: 'Srushti Chawhan', department: 'CS', seat: 'Desk 9', table: 'Table 1', checkIn: '09:46 AM', wfh: false },
+  { id: 37, name: 'Nathanial Siqueira Vaz', department: 'CS', seat: 'Desk 10', table: 'Table 1', checkIn: '09:47 AM', wfh: false },
+  { id: 38, name: 'Dhruti Maru', department: 'CS', seat: 'Desk 11', table: 'Table 1', checkIn: '09:48 AM', wfh: false },
+  { id: 39, name: 'Dhyan Ramnani', department: 'CS', seat: 'Desk 12', table: 'Table 1', checkIn: '09:49 AM', wfh: false },
+  { id: 11, name: 'Rupesh Doiphode', department: 'Art', seat: 'Desk 13', table: 'Table 2', checkIn: '09:21 AM', wfh: false },
+  { id: 12, name: 'Yogesh More', department: 'Art', seat: 'Desk 14', table: 'Table 2', checkIn: '09:22 AM', wfh: false },
+  { id: 13, name: 'Rahul Kumawat', department: 'Art', seat: 'Desk 15', table: 'Table 2', checkIn: '09:23 AM', wfh: false },
+  { id: 14, name: 'Masumi Shrimankar', department: 'Art', seat: 'Desk 16', table: 'Table 2', checkIn: '09:24 AM', wfh: false },
+  { id: 15, name: 'Dhruvi Shah', department: 'Art', seat: 'Desk 17', table: 'Table 2', checkIn: '09:25 AM', wfh: false },
+  { id: 16, name: 'Sonali Sawant', department: 'Art', seat: 'Desk 18', table: 'Table 2', checkIn: '09:26 AM', wfh: false },
+  { id: 17, name: 'Sushant Agare', department: 'Art', seat: 'Desk 19', table: 'Table 2', checkIn: '09:27 AM', wfh: false },
+  { id: 18, name: 'Amey Lad', department: 'Art', seat: 'Desk 20', table: 'Table 2', checkIn: '09:28 AM', wfh: false },
+  { id: 19, name: 'Kiran Salkar', department: 'Art', seat: 'Desk 21', table: 'Table 2', checkIn: '09:29 AM', wfh: false },
+  { id: 20, name: 'Atharva Salvi', department: 'Art', seat: 'Desk 22', table: 'Table 2', checkIn: '09:30 AM', wfh: false },
+  { id: 23, name: 'Subodh Chaubey', department: 'Copy', seat: 'Desk 23', table: 'Table 3', checkIn: '09:33 AM', wfh: false },
+  { id: 24, name: 'Ryan Parkar', department: 'Copy', seat: 'Desk 24', table: 'Table 3', checkIn: '09:34 AM', wfh: false },
+  { id: 25, name: 'Ritwik Mishra', department: 'Copy', seat: 'Desk 25', table: 'Table 3', checkIn: '09:35 AM', wfh: false },
+  { id: 26, name: 'Sanjit Samant', department: 'Copy', seat: 'Desk 26', table: 'Table 3', checkIn: '09:36 AM', wfh: false },
+  { id: 27, name: 'Anarghya Poojary', department: 'Copy', seat: 'Desk 27', table: 'Table 3', checkIn: '09:37 AM', wfh: false },
+  { id: 28, name: 'Juhi Pravin Shah', department: 'Copy', seat: 'Desk 28', table: 'Table 3', checkIn: '09:38 AM', wfh: false },
+  { id: 29, name: 'Gaurav Pant', department: 'Copy', seat: 'Desk 29', table: 'Table 3', checkIn: '09:39 AM', wfh: false },
+  { id: 30, name: 'Aditya Salve', department: 'Copy', seat: 'Desk 30', table: 'Table 3', checkIn: '09:40 AM', wfh: false },
+  { id: 4, name: 'Viraj Chorghe', department: 'Flims', seat: 'Desk 31', table: 'Table 4', checkIn: '09:14 AM', wfh: false },
+  { id: 5, name: 'Varun Lalka', department: 'Flims', seat: 'Desk 32', table: 'Table 4', checkIn: '09:15 AM', wfh: false },
+  { id: 6, name: 'Darryl Gomes', department: 'Flims', seat: 'Desk 33', table: 'Table 4', checkIn: '09:16 AM', wfh: false },
+  { id: 7, name: 'Ashok Chatla', department: 'Flims', seat: 'Desk 34', table: 'Table 4', checkIn: '09:17 AM', wfh: false },
+  { id: 8, name: 'Raj Kolambkar', department: 'Flims', seat: 'Desk 35', table: 'Table 4', checkIn: '09:18 AM', wfh: false },
+  { id: 9, name: 'Avishkar Mandavkar', department: 'Flims', seat: 'Desk 36', table: 'Table 4', checkIn: '09:19 AM', wfh: false },
+  { id: 10, name: 'Bhaskar Wooragonda', department: 'Flims', seat: 'Desk 37', table: 'Table 4', checkIn: '09:20 AM', wfh: false },
+  { id: 46, name: 'Dattaram Kambli', department: 'Studio', seat: 'Desk 38', table: 'Table 5', checkIn: '09:16 AM', wfh: false },
+  { id: 47, name: 'Biju Dasan', department: 'Studio', seat: 'Desk 39', table: 'Table 5', checkIn: '09:17 AM', wfh: false },
+  { id: 48, name: 'Uday Panchal', department: 'Studio', seat: 'Desk 40', table: 'Table 5', checkIn: '09:18 AM', wfh: false },
+  { id: 49, name: 'Ashish Kumbhar', department: 'Studio', seat: 'Desk 41', table: 'Table 5', checkIn: '09:19 AM', wfh: false },
+  { id: 50, name: 'Navnath Bhere', department: 'Studio', seat: 'Desk 42', table: 'Table 5', checkIn: '09:20 AM', wfh: false },
+  { id: 51, name: 'Rajesh K Bhardwaj', department: 'Studio', seat: 'Desk 43', table: 'Table 5', checkIn: '09:21 AM', wfh: false },
+  { id: 52, name: 'Abhishek Shelar', department: 'Studio', seat: 'Desk 44', table: 'Table 5', checkIn: '09:22 AM', wfh: false },
+  { id: 54, name: 'Meghna Gambhir', department: 'Digital', seat: 'Desk 45', table: 'Table 6', checkIn: '09:24 AM', wfh: false },
+  { id: 55, name: 'Amaan Khan', department: 'Digital', seat: 'Desk 46', table: 'Table 6', checkIn: '09:25 AM', wfh: false },
+  { id: 56, name: 'Mohit Devganiya', department: 'Digital', seat: 'Desk 47', table: 'Table 6', checkIn: '09:26 AM', wfh: false },
+  { id: 57, name: 'Prem Gohil', department: 'Digital', seat: 'Desk 48', table: 'Table 6', checkIn: '09:27 AM', wfh: false },
+  { id: 58, name: 'Gaurav Gohil', department: 'Digital', seat: 'Desk 49', table: 'Table 6', checkIn: '09:28 AM', wfh: false },
+  { id: 59, name: 'Nitesh Kumar', department: 'Digital', seat: 'Desk 50', table: 'Table 6', checkIn: '09:29 AM', wfh: false },
+  { id: 60, name: 'Aanchal Choudhary', department: 'Digital', seat: 'Desk 51', table: 'Table 6', checkIn: '09:30 AM', wfh: false },
+  { id: 61, name: 'Jennifer Sequeira', department: 'Digital', seat: 'Desk 52', table: 'Table 6', checkIn: '09:31 AM', wfh: false },
+  { id: 62, name: 'Vidya Sridhar', department: 'Digital', seat: 'Desk 53', table: 'Table 6', checkIn: '09:32 AM', wfh: false },
+  { id: 63, name: 'Mahesh Tanawde', department: 'Digital', seat: 'Desk 54', table: 'Table 6', checkIn: '09:33 AM', wfh: false },
+  { id: 64, name: 'Yatin Ashok Mhatre', department: 'Digital', seat: 'Desk 55', table: 'Table 6', checkIn: '09:34 AM', wfh: false },
+  { id: 65, name: 'Akshita Datir', department: 'Digital', seat: 'Desk 56', table: 'Table 6', checkIn: '09:35 AM', wfh: false },
+  { id: 21, name: 'Siya Pandit', department: 'Art', seat: null, table: 'No desk', checkIn: '09:31 AM', wfh: true },
+  { id: 22, name: 'Sumedh Sawant', department: 'Art', seat: null, table: 'No desk', checkIn: '09:32 AM', wfh: true },
+  { id: 40, name: 'Jayalaxmi Ravi', department: 'CS', seat: null, table: 'No desk', checkIn: '09:10 AM', wfh: true },
+  { id: 41, name: 'Abhay Khabale', department: 'CS', seat: null, table: 'No desk', checkIn: '09:11 AM', wfh: true },
+  { id: 42, name: 'Steffi Barboza', department: 'CS', seat: null, table: 'No desk', checkIn: '09:12 AM', wfh: true },
+  { id: 43, name: 'Tarun Kamath', department: 'CS', seat: null, table: 'No desk', checkIn: '09:13 AM', wfh: true },
+  { id: 44, name: 'Kshitij Bidvai', department: 'CS', seat: null, table: 'No desk', checkIn: '09:14 AM', wfh: true },
+  { id: 45, name: 'Anoushka Kabre', department: 'CS', seat: null, table: 'No desk', checkIn: '09:15 AM', wfh: true },
+  { id: 53, name: 'Sunil Saundalkar', department: 'Studio', seat: null, table: 'No desk', checkIn: '09:23 AM', wfh: true },
+  { id: 66, name: 'Intern 1', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
+  { id: 67, name: 'Intern 2', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
+  { id: 68, name: 'Intern 3', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true }
 ];
 
-const departmentOptions = [
-  'CS', 'Art', 'Copy', 'Production', 'Studio', 'Digital', 'HR', 'Finance', 'IT'
-];
+// departmentOptions / directoryGroups / seatTableGroups / deptToTable are all
+// derived from tableConfig below (single source of truth).
 
 const defaultMeetingRooms = [
-  { id: 1, name: 'Conference Room', capacity: 12, description: '12 person seating', status: 'available', booked_by: null, booked_until: null },
-  { id: 2, name: 'Meet Room 1',     capacity: 4,  description: '4 chairs',          status: 'available', booked_by: null, booked_until: null },
-  { id: 3, name: 'Meet Room 2',     capacity: 4,  description: '3 chairs · 1 sofa', status: 'available', booked_by: null, booked_until: null },
+  { id: 1, name: 'Board Room',       capacity: 12, status: 'available', booked_by: null, booked_until: null },
+  { id: 2, name: 'Conference Room A',capacity: 8,  status: 'available', booked_by: null, booked_until: null },
+  { id: 3, name: 'Conference Room B',capacity: 6,  status: 'available', booked_by: null, booked_until: null },
+  { id: 4, name: 'Huddle Room 1',    capacity: 4,  status: 'available', booked_by: null, booked_until: null },
+  { id: 5, name: 'Huddle Room 2',    capacity: 4,  status: 'available', booked_by: null, booked_until: null },
 ];
 
-const deptToTable = {
-  'CS': 'Table 1',
-  'Art': 'Table 2',
-  'Copy': 'Table 3',
-  'Production': 'Table 7',
-  'Studio': 'Table 5',
-  'Digital': 'Table 6',
-  'HR': 'Table 6',
-  'Finance': 'Table 6',
-  'IT': 'Table 6',
-};
+// ── Seat layout: single source of truth ─────────────────────────────────────
+// Each table has two rows ("sides"); each side belongs to a team. Seats are
+// numbered sequentially (Desk 1, Desk 2, …) following this order.
+const tableConfig = [
+  { table: 'Table 1', sides: [{ team: 'BKT', count: 5 },         { team: 'AMEX 1', count: 5 }] },
+  { table: 'Table 2', sides: [{ team: 'Art', count: 5 },         { team: 'Art', count: 5 }] },
+  { table: 'Table 3', sides: [{ team: 'Studio', count: 5 },      { team: 'Studio', count: 5 }] },
+  { table: 'Table 4', sides: [{ team: 'AMEX 2', count: 5 },      { team: 'EBCO', count: 5 }] },
+  { table: 'Table 5', sides: [{ team: 'UnderArmour', count: 5 }, { team: 'Nat GEO', count: 5 }] },
+  { table: 'Table 6', sides: [{ team: 'VYOMA', count: 5 },       { team: 'Finance/HR', count: 5 }] },
+];
 
-const directoryGroups = ['CS', 'Art', 'Copy', 'Production', 'Studio', 'Digital', 'HR', 'Finance', 'IT'];
+// Derived: 'Desk N' -> { table, department, side: 'top'|'bottom', sideIndex }
+const seatMeta = {};
+(function buildSeatMeta() {
+  let n = 1;
+  tableConfig.forEach((t) => {
+    t.sides.forEach((side, si) => {
+      for (let k = 0; k < side.count; k++) {
+        seatMeta[`Desk ${n}`] = {
+          table: t.table,
+          department: side.team,
+          side: si === 0 ? 'top' : 'bottom',
+          sideIndex: k,
+        };
+        n++;
+      }
+    });
+  });
+})();
 
-const seatTableGroups = ['Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6', 'Table 7'];
+const seatTableGroups = tableConfig.map((t) => t.table);
+
+// Ordered, de-duplicated team list
+const TEAMS = [];
+tableConfig.forEach((t) => t.sides.forEach((s) => { if (!TEAMS.includes(s.team)) TEAMS.push(s.team); }));
+
+const directoryGroups = TEAMS;
+const departmentOptions = TEAMS;
+
+// team -> first table that contains it
+const deptToTable = {};
+tableConfig.forEach((t) => t.sides.forEach((s) => { if (!deptToTable[s.team]) deptToTable[s.team] = t.table; }));
 
 function getSeatDepartment(seatId) {
-  const seatNumber = parseInt(seatId.replace('Desk ', ''), 10);
-  if (seatNumber <= 12) return 'CS';
-  if (seatNumber <= 22) return 'Art';
-  if (seatNumber <= 30) return 'Copy';
-  if (seatNumber <= 37) return 'Production';
-  if (seatNumber <= 44) return 'Studio';
-  // Specific assignments for desks 45-56
-  if (seatNumber === 52) return 'HR';
-  if (seatNumber === 53 || seatNumber === 54) return 'Finance';
-  if (seatNumber === 55) return 'IT';
-  return 'Digital';
+  if (!seatId) return '';
+  if (seatMeta[seatId]) return seatMeta[seatId].department;
+  const s = state.seats.find((x) => x.id === seatId);
+  return s ? (s.department || '') : '';
 }
 
 function getSeatTable(seatId) {
   if (!seatId) return 'No desk';
-  const seatNumber = parseInt(seatId.replace('Desk ', ''), 10);
-  if (seatNumber <= 12) return 'Table 1';
-  if (seatNumber <= 22) return 'Table 2';
-  if (seatNumber <= 30) return 'Table 3';
-  if (seatNumber <= 37) return 'Table 4';
-  if (seatNumber <= 44) return 'Table 5';
-  return 'Table 6';
+  if (seatMeta[seatId]) return seatMeta[seatId].table;
+  const s = state.seats.find((x) => x.id === seatId);
+  return s ? (s.table || 'No desk') : 'No desk';
+}
+
+// 'top' / 'bottom' for a seat (falls back to splitting a table's seats in half)
+function getSeatSide(seat) {
+  if (seatMeta[seat.id]) return seatMeta[seat.id].side;
+  return 'top';
+}
+function getSeatSideIndex(seat) {
+  if (seatMeta[seat.id]) return seatMeta[seat.id].sideIndex;
+  const n = parseInt((seat.id || '').replace('Desk ', ''), 10);
+  return isNaN(n) ? 0 : n;
 }
 
 function initSeats() {
-  const seats = [];
-  // Desks
-  for (let i = 1; i <= 56; i++) {
-    const seatId = `Desk ${i}`;
-    seats.push({
-      id: seatId, label: seatId, floor: 'main-floor',
-      status: 'free', occupant: null,
-      department: getSeatDepartment(seatId),
-      table: getSeatTable(seatId), color: null,
-    });
-  }
+  const seats = Object.keys(seatMeta).map((seatId) => ({
+    id: seatId, label: seatId, floor: 'main-floor',
+    status: 'free', occupant: null,
+    department: seatMeta[seatId].department,
+    table: seatMeta[seatId].table, color: null,
+  }));
   mockEmployees.forEach((employee) => {
     const seat = seats.find((item) => item.id === employee.seat);
     if (seat) {
       seat.status = 'occupied';
-      seat.occupant = { name: employee.name, department: employee.department };
+      // occupant adopts the seat's (new) team so labels stay consistent
+      seat.occupant = { name: employee.name, department: seat.department };
       if (employee.role) seat.occupant.role = employee.role;
     }
   });
@@ -219,8 +214,15 @@ function initSeats() {
   state.employees = mockEmployees.map((emp) => ({
     wfh: false,
     ...emp,
+    department: emp.seat ? getSeatDepartment(emp.seat) : emp.department,
     table: emp.seat ? getSeatTable(emp.seat) : 'No desk',
   }));
+}
+
+// Sort seats by their desk number so rows/lists are in a predictable order.
+function sortSeats(seats) {
+  const num = (s) => parseInt((s.id || '').replace('Desk ', ''), 10) || 0;
+  return [...seats].sort((a, b) => num(a) - num(b));
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -240,14 +242,10 @@ async function loadFromServer() {
     ]);
     if (seatsErr || empsErr) throw new Error(seatsErr?.message || empsErr?.message);
     if (!seats?.length || !emps?.length) throw new Error('DB tables empty — run supabase-schema.sql');
-    state.seats = seats;
+    state.seats = sortSeats(seats);
     state.employees = emps.map((emp) => ({ wfh: emp.wfh || false, ...emp }));
-    // Always enforce exactly the 3 defined rooms; preserve live booking status
-    state.meetingRooms = defaultMeetingRooms.map(def => {
-      const live = rooms?.find(r => r.id === def.id);
-      return { ...def, status: live?.status || 'available', booked_by: live?.booked_by || null, booked_until: live?.booked_until || null };
-    });
-    syncDefaultRoomsToDb(rooms);
+    if (rooms?.length) state.meetingRooms = rooms;
+    else if (!state.meetingRooms.length) state.meetingRooms = defaultMeetingRooms.map(r => ({ ...r }));
     return true;
   } catch (err) {
     console.warn('Supabase unavailable — using local fallback data:', err.message);
@@ -261,86 +259,6 @@ async function saveSeat(seat) {
   if (!_supabase) return;
   const { error } = await _supabase.from('seats').update(seat).eq('id', seat.id);
   if (error) console.error('saveSeat failed:', error);
-}
-
-async function insertSeat(seat) {
-  state.seats.push(seat);
-  if (!_supabase) return;
-  const { error } = await _supabase.from('seats').insert(seat);
-  if (error) console.error('insertSeat failed:', error);
-}
-
-async function deleteSeat(seatId) {
-  state.seats = state.seats.filter(s => s.id !== seatId);
-  delete state.customSeatPositions[seatId];
-  await saveSettingToDb('customSeatPositions', state.customSeatPositions);
-  if (!_supabase) return;
-  const { error } = await _supabase.from('seats').delete().eq('id', seatId);
-  if (error) console.error('deleteSeat failed:', error);
-}
-
-function clientToSVGCoords(svg, clientX, clientY) {
-  const rect = svg.getBoundingClientRect();
-  const svgX = (clientX - rect.left) * (1300 / rect.width);
-  const svgY = (clientY - rect.top)  * (850  / rect.height);
-  return {
-    x: Math.round((svgX - state.panX) / state.zoom),
-    y: Math.round((svgY - state.panY) / state.zoom),
-  };
-}
-
-async function saveSettingToDb(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-  if (!_supabase) return;
-  const { error } = await _supabase.from('settings')
-    .upsert({ key, value }, { onConflict: 'key' });
-  if (error) console.warn('saveSettingToDb failed:', error.message);
-}
-
-async function loadSettingsFromDb() {
-  // Always load from localStorage first so custom data survives a refresh
-  try { Object.assign(state.tableNames,           JSON.parse(localStorage.getItem('tableNames')           || '{}')); } catch {}
-  try { Object.assign(state.deptNames,            JSON.parse(localStorage.getItem('deptNames')            || '{}')); } catch {}
-  try { Object.assign(state.customSeatPositions,  JSON.parse(localStorage.getItem('customSeatPositions')  || '{}')); } catch {}
-  // Overlay with Supabase data when available and non-empty (Supabase wins on conflict)
-  if (_supabase) {
-    try {
-      const { data, error } = await _supabase.from('settings').select('key, value');
-      if (!error && data?.length) {
-        data.forEach(row => {
-          if (row.key === 'tableNames' && row.value && typeof row.value === 'object') {
-            Object.assign(state.tableNames, row.value);
-          }
-          if (row.key === 'deptNames' && row.value && typeof row.value === 'object') {
-            Object.assign(state.deptNames, row.value);
-          }
-          if (row.key === 'customSeatPositions' && row.value && typeof row.value === 'object') {
-            Object.assign(state.customSeatPositions, row.value);
-          }
-        });
-      }
-    } catch {}
-  }
-}
-
-async function syncDefaultRoomsToDb(dbRooms) {
-  if (!_supabase) return;
-  const defaultIds = defaultMeetingRooms.map(r => r.id);
-  // Remove any stale rooms not in our defaults
-  const staleIds = (dbRooms || []).map(r => r.id).filter(id => !defaultIds.includes(id));
-  if (staleIds.length) {
-    await _supabase.from('meeting_rooms').delete().in('id', staleIds);
-  }
-  // Upsert all 3 defaults (name/capacity/description always overwritten)
-  for (const def of defaultMeetingRooms) {
-    const live = (dbRooms || []).find(r => r.id === def.id);
-    await _supabase.from('meeting_rooms').upsert({
-      id: def.id, name: def.name, capacity: def.capacity, description: def.description,
-      status: live?.status || 'available',
-      booked_by: live?.booked_by || null,
-      booked_until: live?.booked_until || null,
-    }, { onConflict: 'id' });
-  }
 }
 
 async function addEmployee(employee) {
@@ -357,15 +275,15 @@ async function updateEmployee(id, patch) {
 }
 
 async function deleteEmployee(id) {
-  if (!_supabase) return;
+  if (!_supabase) return { ok: true };
   const { error } = await _supabase.from('employees').delete().eq('id', id);
-  if (error) console.error('deleteEmployee failed:', error);
+  if (error) { console.error('deleteEmployee failed:', error); return { ok: false, error }; }
+  return { ok: true };
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 async function initApp() {
   await loadFromServer();
-  await loadSettingsFromDb();
   await checkExpiredVisitors();
   await checkExpiredRooms();
   renderFloorMap();
@@ -380,6 +298,81 @@ async function initApp() {
   renderRooms();
   startAutoRefresh();
   bindUIActions();
+  setupVisualEffects();
+}
+
+// ── Parallax, scroll progress, reveal-on-scroll, topbar state ────────────────
+function setupVisualEffects() {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const orbs = Array.from(document.querySelectorAll('.parallax-bg .orb'));
+  const progressBar = document.querySelector('.scroll-progress span');
+  const topbar = document.querySelector('.topbar');
+
+  // Scroll progress bar + parallax-on-scroll + sticky topbar shadow
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      if (progressBar) progressBar.style.width = `${pct}%`;
+      if (topbar) topbar.classList.toggle('scrolled', scrollTop > 8);
+      if (!reduce) {
+        orbs.forEach((orb) => {
+          const depth = parseFloat(orb.dataset.depth) || 0.1;
+          orb.style.transform = `translateY(${scrollTop * depth}px)`;
+        });
+      }
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Parallax-on-mouse-move (desktop only, respects reduced motion)
+  if (!reduce && window.matchMedia('(pointer: fine)').matches) {
+    let mouseRAF = false;
+    window.addEventListener('mousemove', (e) => {
+      if (mouseRAF) return;
+      mouseRAF = true;
+      requestAnimationFrame(() => {
+        const cx = (e.clientX / window.innerWidth - 0.5) * 2;
+        const cy = (e.clientY / window.innerHeight - 0.5) * 2;
+        const scrollTop = window.scrollY || 0;
+        orbs.forEach((orb) => {
+          const depth = parseFloat(orb.dataset.depth) || 0.1;
+          const mx = cx * depth * 90;
+          const my = cy * depth * 90;
+          orb.style.transform = `translate(${mx}px, ${scrollTop * depth + my}px)`;
+        });
+        mouseRAF = false;
+      });
+    }, { passive: true });
+  }
+
+  // Reveal-on-scroll for major cards/sections
+  const stagger = document.querySelector('.summary-row');
+  if (stagger) stagger.classList.add('reveal-stagger');
+
+  // Scoped to the map panel (visible by default). Other panels animate via
+  // the .panel.active "panelIn" transition when switched to, so they don't
+  // need (and shouldn't get) reveal — IntersectionObserver can't see
+  // display:none content and would leave it stuck invisible.
+  const revealTargets = document.querySelectorAll('#panel-map .map-controls, #panel-map .floor-map');
+  if ('IntersectionObserver' in window && !reduce) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    revealTargets.forEach((el) => { el.classList.add('reveal'); io.observe(el); });
+  }
 }
 
 function bindUIActions() {
@@ -396,10 +389,6 @@ function bindUIActions() {
   document.getElementById('zoom-in').addEventListener('click', () => handleZoom(1.2));
   document.getElementById('zoom-out').addEventListener('click', () => handleZoom(0.85));
   document.getElementById('zoom-reset').addEventListener('click', () => resetZoom());
-  document.getElementById('drag-chair-source').addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData('application/new-chair', '1');
-    e.dataTransfer.effectAllowed = 'copy';
-  });
   document.getElementById('layout-toggle').addEventListener('change', (event) => {
     state.showActualLayout = event.target.checked;
     renderFloorMap();
@@ -431,6 +420,15 @@ function bindUIActions() {
   document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
   document.getElementById('employee-form').addEventListener('submit', handleEmployeeAdd);
   document.getElementById('floor-map').addEventListener('click', handleChairClick);
+
+  // Admin seat view toggle: Visual layout ⇄ List
+  const seatVisualBtn = document.getElementById('admin-seat-view-visual');
+  const seatListBtn = document.getElementById('admin-seat-view-list');
+  if (seatVisualBtn && seatListBtn) {
+    seatVisualBtn.addEventListener('click', () => setAdminSeatView('visual'));
+    seatListBtn.addEventListener('click', () => setAdminSeatView('list'));
+  }
+
   document.addEventListener('click', (event) => {
     if (!event.target.closest('.seat-node') && !event.target.closest('.cabin-box') && !event.target.closest('.map-seat-popup')) {
       document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
@@ -438,7 +436,24 @@ function bindUIActions() {
     if (!event.target.closest('.floor-map')) {
       document.querySelectorAll('.chair-popup').forEach((p) => p.remove());
     }
+    if (!event.target.closest('.admin-seat-popover') && !event.target.closest('.admin-chair')) {
+      closeAdminSeatPopover();
+    }
   });
+}
+
+function setAdminSeatView(view) {
+  const visual = document.getElementById('admin-seat-visual');
+  const list = document.getElementById('admin-seat-list');
+  const vBtn = document.getElementById('admin-seat-view-visual');
+  const lBtn = document.getElementById('admin-seat-view-list');
+  if (!visual || !list) return;
+  closeAdminSeatPopover();
+  const showVisual = view === 'visual';
+  visual.classList.toggle('hidden', !showVisual);
+  list.classList.toggle('hidden', showVisual);
+  vBtn?.classList.toggle('active', showVisual);
+  lBtn?.classList.toggle('active', !showVisual);
 }
 
 function renderMapDepartmentButtons() {
@@ -448,7 +463,7 @@ function renderMapDepartmentButtons() {
   const filteredGroups = directoryGroups.filter(d => activeDepts.has(d));
   container.innerHTML = [
     '<button class="dept-btn active" data-dept="">All</button>',
-    ...filteredGroups.map((d) => `<button class="dept-btn" data-dept="${d}">${getDeptName(d)}</button>`),
+    ...filteredGroups.map((d) => `<button class="dept-btn" data-dept="${d}">${d}</button>`),
   ].join('');
 }
 
@@ -463,38 +478,26 @@ function switchView(view) {
 }
 
 // ── Floor map rendering ───────────────────────────────────────────────────────
+// 3 tables per band, 2 bands. Each table: 5 seats top row, 5 seats bottom row.
+const TABLE_LAYOUT = {
+  'Table 1': { cx: 250,  topY: 240, bottomY: 340 },
+  'Table 2': { cx: 650,  topY: 240, bottomY: 340 },
+  'Table 3': { cx: 1050, topY: 240, bottomY: 340 },
+  'Table 4': { cx: 250,  topY: 560, bottomY: 660 },
+  'Table 5': { cx: 650,  topY: 560, bottomY: 660 },
+  'Table 6': { cx: 1050, topY: 560, bottomY: 660 },
+};
+const SEAT_GAP = 54;
+
 function getSeatCoordinates(seatId) {
-  if (state.customSeatPositions[seatId]) return state.customSeatPositions[seatId];
-  const num = parseInt(seatId.replace('Desk ', ''), 10);
-  if (num <= 12) { // Table 1 - CS (12 desks: 1-6 top, 7-12 bottom)
-    const idx = num - 1;
-    if (idx < 6) return { x: 115 + idx * 54, y: 240, dir: 'top' };
-    return { x: 115 + (idx - 6) * 54, y: 340, dir: 'bottom' };
-  }
-  if (num <= 22) { // Table 2 - Art (10 desks: 13-17 top, 18-22 bottom)
-    const idx = num - 13;
-    if (idx < 5) return { x: 541 + idx * 54, y: 240, dir: 'top' };
-    return { x: 541 + (idx - 5) * 54, y: 340, dir: 'bottom' };
-  }
-  if (num <= 30) { // Table 3 - Copy (8 desks: 23-26 top, 27-30 bottom)
-    const idx = num - 23;
-    if (idx < 4) return { x: 968 + idx * 54, y: 240, dir: 'top' };
-    return { x: 968 + (idx - 4) * 54, y: 340, dir: 'bottom' };
-  }
-  if (num <= 37) { // Table 4 - Production (7 desks: 31-34 top, 35-37 bottom)
-    const idx = num - 31;
-    if (idx < 4) return { x: 169 + idx * 54, y: 560, dir: 'top' };
-    return { x: 196 + (idx - 4) * 54, y: 660, dir: 'bottom' };
-  }
-  if (num <= 44) { // Table 5 - Studio (7 desks: 38-41 top, 42-44 bottom)
-    const idx = num - 38;
-    if (idx < 4) return { x: 569 + idx * 54, y: 560, dir: 'top' };
-    return { x: 596 + (idx - 4) * 54, y: 660, dir: 'bottom' };
-  }
-  // Table 6 - Digital & Support (12 desks: 45-56)
-  const idx = num - 45;
-  if (idx < 6) return { x: 915 + idx * 54, y: 560, dir: 'top' };
-  return { x: 915 + (idx - 6) * 54, y: 660, dir: 'bottom' };
+  const m = seatMeta[seatId];
+  if (!m) return null;
+  const L = TABLE_LAYOUT[m.table];
+  if (!L) return null;
+  const span = 4 * SEAT_GAP; // 5 seats → centre the row on the table
+  const x = L.cx - span / 2 + m.sideIndex * SEAT_GAP;
+  const y = m.side === 'top' ? L.topY : L.bottomY;
+  return { x, y, dir: m.side };
 }
 
 function shadeColor(color, percent) {
@@ -655,14 +658,17 @@ function renderFloorMap() {
   const tablesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   tablesGroup.setAttribute('class', 'tables-group');
   
-  const tablesConfig = [
-    { id: 'Table 1', dept: 'CS', xCenter: 250, yCenter: 290, width: 324 },
-    { id: 'Table 2', dept: 'Art', xCenter: 650, yCenter: 290, width: 270 },
-    { id: 'Table 3', dept: 'Copy', xCenter: 1050, yCenter: 290, width: 216 },
-    { id: 'Table 4', dept: 'Production', xCenter: 250, yCenter: 610, width: 216 },
-    { id: 'Table 5', dept: 'Studio', xCenter: 650, yCenter: 610, width: 216 },
-    { id: 'Table 6', dept: 'Digital', xCenter: 1050, yCenter: 610, width: 324 },
-  ];
+  const tablesConfig = tableConfig.map((t) => {
+    const L = TABLE_LAYOUT[t.table];
+    const teams = [...new Set(t.sides.map((s) => s.team))];
+    return {
+      id: t.table,
+      dept: teams.join(' / '),
+      xCenter: L.cx,
+      yCenter: (L.topY + L.bottomY) / 2,
+      width: 270,
+    };
+  });
 
   tablesConfig.forEach((table) => {
     const tableRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -685,7 +691,7 @@ function renderFloorMap() {
     tableText.setAttribute('font-size', '10');
     tableText.setAttribute('font-weight', 'bold');
     tableText.setAttribute('filter', 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))');
-    tableText.textContent = `${getDisplayName(table.id)} (${getDeptName(table.dept)})`;
+    tableText.textContent = `${table.id} (${table.dept})`;
     tablesGroup.appendChild(tableText);
   });
   viewport.appendChild(tablesGroup);
@@ -826,33 +832,6 @@ function renderFloorMap() {
     }
   });
 
-  // Drag-and-drop: accept a new chair dragged from the palette (admin only)
-  svg.addEventListener('dragover', (e) => {
-    if (!state.adminLoggedIn) return;
-    if (e.dataTransfer.types.includes('application/new-chair')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      svg.style.outline = '2px dashed #6366f1';
-    }
-  });
-
-  svg.addEventListener('dragleave', () => {
-    svg.style.outline = '';
-  });
-
-  svg.addEventListener('drop', (e) => {
-    svg.style.outline = '';
-    if (!state.adminLoggedIn) return;
-    if (!e.dataTransfer.types.includes('application/new-chair')) return;
-    e.preventDefault();
-    const { x, y } = clientToSVGCoords(svg, e.clientX, e.clientY);
-    showAddDeskModal(x, y);
-  });
-
-  // Show/hide the chair palette based on admin login
-  const palette = document.getElementById('chair-palette');
-  if (palette) palette.classList.toggle('hidden', !state.adminLoggedIn);
-
   renderSummary();
 }
 
@@ -943,13 +922,6 @@ function handleSeatClick(seatId) {
         <div class="popup-dept" style="margin-bottom: 8px;">Zone: ${seat.department}</div>
         ${actions}
       </div>`;
-  }
-
-  // For custom-placed desks show a remove option (admin only)
-  if (state.adminLoggedIn && state.customSeatPositions[seatId]) {
-    contentHtml += `<div style="margin-top:6px;border-top:1px solid #475569;padding-top:6px;">
-      <button class="btn danger small" style="width:100%;font-size:0.75rem;" onclick="removeCustomDesk('${seatId}')">Remove Desk</button>
-    </div>`;
   }
 
   foreign.innerHTML = contentHtml;
@@ -1136,23 +1108,42 @@ function renderTableVisual() {
   seatTableGroups.forEach((tableName) => {
     const seats = state.seats.filter((seat) => seat.table === tableName);
     if (!seats.length) return;
-    const topCount = Math.ceil(seats.length / 2);
-    const topSeats = seats.slice(0, topCount);
-    const bottomSeats = seats.slice(topCount);
+    const { topSeats, bottomSeats, topTeam, bottomTeam } = splitTableSides(seats);
     const depts = [...new Set(seats.map((s) => s.department))];
     const card = document.createElement('div');
     card.className = 'table-visual-card';
+    const sameTeam = topTeam === bottomTeam;
     card.innerHTML = `
       <div class="table-visual-header">
-        <span class="table-visual-name">${getDisplayName(tableName)}</span>
+        <span class="table-visual-name">${tableName}</span>
         <span class="table-visual-dept">${depts.join(' · ')}</span>
       </div>
+      ${topTeam ? `<div class="row-team-label">${topTeam}</div>` : ''}
       <div class="chairs-row chairs-top">${topSeats.map((s) => buildChairEl(s, 'top')).join('')}</div>
-      <div class="table-plank"><span class="table-plank-text">${getDisplayName(tableName)}</span></div>
-      <div class="chairs-row chairs-bottom">${bottomSeats.map((s) => buildChairEl(s, 'bottom')).join('')}</div>`;
+      <div class="table-plank"><span class="table-plank-text">${tableName}</span></div>
+      <div class="chairs-row chairs-bottom">${bottomSeats.map((s) => buildChairEl(s, 'bottom')).join('')}</div>
+      ${bottomTeam && !sameTeam ? `<div class="row-team-label">${bottomTeam}</div>` : ''}`;
     mapContainer.appendChild(card);
   });
   renderSummary();
+}
+
+// Split a table's seats into top/bottom rows (by seatMeta) with each row's team.
+function splitTableSides(seats) {
+  const byIdx = (a, b) => getSeatSideIndex(a) - getSeatSideIndex(b);
+  const topSeats = seats.filter((s) => getSeatSide(s) === 'top').sort(byIdx);
+  let bottomSeats = seats.filter((s) => getSeatSide(s) === 'bottom').sort(byIdx);
+  // Fallback for any seats without metadata: split the list in half.
+  if (!topSeats.length && !bottomSeats.length && seats.length) {
+    const half = Math.ceil(seats.length / 2);
+    return { topSeats: seats.slice(0, half), bottomSeats: seats.slice(half),
+             topTeam: seats[0]?.department || '', bottomTeam: seats[half]?.department || '' };
+  }
+  return {
+    topSeats, bottomSeats,
+    topTeam: topSeats[0]?.department || seatMeta[topSeats[0]?.id]?.department || '',
+    bottomTeam: bottomSeats[0]?.department || seatMeta[bottomSeats[0]?.id]?.department || '',
+  };
 }
 
 function buildChairEl(seat, position) {
@@ -1192,7 +1183,13 @@ function renderDirectory() {
     const match = [emp.name, emp.department].join(' ').toLowerCase();
     return match.includes(search) && (!tableFilter || emp.table === tableFilter);
   });
-  const groups = directoryGroups.map((dept) => {
+  // Show the configured teams that have people, plus any other departments
+  // present in the data (e.g. legacy WFH staff) so nobody disappears.
+  const present = directoryGroups.filter((d) => filtered.some((e) => e.department === d));
+  const extra = [...new Set(filtered.map((e) => e.department))]
+    .filter((d) => d && !directoryGroups.includes(d));
+  const groupList = [...present, ...extra];
+  const groups = groupList.map((dept) => {
     const rows = filtered.filter((e) => e.department === dept).map((e) => {
       const wfhBadge = e.wfh ? '<span class="wfh-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 6px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-left: 6px;">WFH</span>' : '';
       const seatText = e.wfh ? 'WFH (Remote)' : (e.seat || 'No desk');
@@ -1205,7 +1202,7 @@ function renderDirectory() {
     }).join('');
     return `
       <div class="directory-group-card">
-        <h3>${getDeptName(dept)}</h3>
+        <h3>${dept}</h3>
         <div class="directory-table-wrapper">
           <table class="directory-table">
             <thead><tr><th>Name</th><th>Department</th><th>Table</th><th>Seat</th><th>Check-in Time</th></tr></thead>
@@ -1233,13 +1230,39 @@ function renderSummary() {
   const inOfficeStaff = totalStaff - wfhStaff;
   const occupancy = total ? Math.round((occupied / total) * 100) : 0;
   
-  document.getElementById('total-seats').textContent = total;
-  document.getElementById('total-staff-count').textContent = totalStaff;
-  document.getElementById('office-staff-count').textContent = inOfficeStaff;
-  document.getElementById('wfh-staff-count').textContent = wfhStaff;
-  document.getElementById('occupied-count').textContent = occupied;
-  document.getElementById('free-count').textContent = free;
-  document.getElementById('occupancy-rate').textContent = `${occupancy}%`;
+  animateCount(document.getElementById('total-seats'), total);
+  animateCount(document.getElementById('total-staff-count'), totalStaff);
+  animateCount(document.getElementById('office-staff-count'), inOfficeStaff);
+  animateCount(document.getElementById('wfh-staff-count'), wfhStaff);
+  animateCount(document.getElementById('occupied-count'), occupied);
+  animateCount(document.getElementById('free-count'), free);
+  animateCount(document.getElementById('occupancy-rate'), occupancy, '%');
+}
+
+// Smoothly counts a number up/down to its new target.
+function animateCount(el, target, suffix = '') {
+  if (!el) return;
+  const from = parseInt(el.textContent, 10) || 0;
+  if (from === target) { el.textContent = `${target}${suffix}`; return; }
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = `${target}${suffix}`;
+    return;
+  }
+  const duration = 650;
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    el.textContent = `${Math.round(from + (target - from) * eased)}${suffix}`;
+    if (p < 1) requestAnimationFrame(step);
+    else {
+      el.textContent = `${target}${suffix}`;
+      el.classList.remove('count-pop');
+      void el.offsetWidth;
+      el.classList.add('count-pop');
+    }
+  }
+  requestAnimationFrame(step);
 }
 
 function renderDirectoryDeptOptions() {
@@ -1316,39 +1339,39 @@ async function toggleSeatStatus(seatId) {
 
 async function handleEmployeeAdd(event) {
   event.preventDefault();
-  const nameInput    = document.getElementById('employee-name');
-  const deptInput    = document.getElementById('employee-dept');
-  const tableSelect  = document.getElementById('employee-table');
-  const seatSelect   = document.getElementById('employee-seat');
-  const wfhCheck     = document.getElementById('employee-wfh');
-
-  const name       = nameInput.value.trim();
+  const nameInput = document.getElementById('employee-name');
+  const deptInput = document.getElementById('employee-dept');
+  const seatSelect = document.getElementById('employee-seat');
+  const name = nameInput.value.trim();
   const department = deptInput.value;
-  const tableId    = tableSelect ? tableSelect.value : '';
-  const seatId     = seatSelect.value;
-  const isWfh      = wfhCheck ? wfhCheck.checked : false;
-
+  const seatId = seatSelect.value; // Empty string if WFH
+  
   if (!name || !department) {
     alert('Please enter name and department.');
     return;
   }
-
+  
   let seatRecord = null;
   if (seatId) {
-    seatRecord = state.seats.find(item => item.id === seatId);
-    if (!seatRecord) { alert('Selected desk not found.'); return; }
-    if (seatRecord.status !== 'free') { alert('That desk is no longer available.'); return; }
+    seatRecord = state.seats.find((item) => item.id === seatId);
+    if (!seatRecord) {
+      alert('Selected desk not found.');
+      return;
+    }
+    if (seatRecord.status !== 'free') {
+      alert('That desk is no longer available. Please select another.');
+      return;
+    }
   }
 
-  const resolvedTable = seatRecord ? seatRecord.table : (tableId || (isWfh ? 'No desk' : 'Table 7'));
-
+  // Create new employee object
   const newEmp = {
     name,
     department,
-    seat: seatId || null,
-    table: resolvedTable,
+    seat: seatId ? seatId : null,
+    table: seatRecord ? seatRecord.table : 'No desk',
     checkIn: getCurrentTime(),
-    wfh: isWfh,
+    wfh: seatId ? false : true
   };
 
   if (seatRecord) {
@@ -1359,24 +1382,52 @@ async function handleEmployeeAdd(event) {
 
   const saved = await addEmployee(newEmp);
   state.employees.push({ ...saved });
-
+  
+  // Clear input
   nameInput.value = '';
-  document.getElementById('admin-nav-employees')?.click();
-
-  renderFloorMap();
-  renderDirectory();
-  renderAdminSeats();
+  
+  // Reset tab selection to Employee List
+  const navEmployeesBtn = document.getElementById('admin-nav-employees');
+  if (navEmployeesBtn) {
+    navEmployeesBtn.click();
+  }
+  
+  renderFloorMap(); 
+  renderDirectory(); 
+  renderAdminSeats(); 
   renderAdminEmployees();
 }
 
 async function removeEmployee(employeeId) {
   const employee = state.employees.find((item) => item.id === employeeId);
   if (!employee) return;
+  if (!confirm(`Remove ${employee.name} from the workspace?\nTheir desk will be freed.`)) return;
   const seat = state.seats.find((item) => item.id === employee.seat);
   if (seat) { seat.status = 'free'; seat.occupant = null; await saveSeat(seat); }
-  await deleteEmployee(employeeId);
+  const result = await deleteEmployee(employeeId);
+  if (result && result.ok === false) {
+    showToast('Could not remove — database rejected the delete (check permissions).', 'error');
+    return;
+  }
   state.employees = state.employees.filter((item) => item.id !== employeeId);
   renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${employee.name} removed`, 'success');
+}
+
+// Lightweight toast notification.
+function showToast(message, type = 'success') {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
 async function updateSeatColor(seatId, color) {
@@ -1400,8 +1451,8 @@ function renderAdminTeamFilters() {
   
   html += filteredOptions.map((dept) => {
     const activeClass = state.adminTeamFilter === dept ? 'active' : '';
-    const tableLabel = deptToTable[dept] ? ` (${getDisplayName(deptToTable[dept])})` : '';
-    return `<button class="dept-btn ${activeClass}" data-dept="${dept}">${getDeptName(dept)}${tableLabel}</button>`;
+    const tableLabel = deptToTable[dept] ? ` (${deptToTable[dept]})` : '';
+    return `<button class="dept-btn ${activeClass}" data-dept="${dept}">${dept}${tableLabel}</button>`;
   }).join('');
   
   container.innerHTML = html;
@@ -1443,45 +1494,31 @@ function initAdminTabs() {
       if (btn.id === 'admin-nav-add') {
         populateAdminAddEmployeeFormOptions();
       }
-      if (btn.id === 'admin-nav-tables') {
-        renderAdminTableSettings();
-      }
     });
   });
 }
 
 function populateAdminAddEmployeeFormOptions() {
+  // Populate Department Select
   const deptSelect = document.getElementById('employee-dept');
   if (deptSelect) {
-    deptSelect.innerHTML = departmentOptions.map(d =>
-      `<option value="${d}">${getDeptName(d)}</option>`
-    ).join('');
+    deptSelect.innerHTML = departmentOptions.map(dept => `<option value="${dept}">${dept}</option>`).join('');
   }
-
-  const tableSelect = document.getElementById('employee-table');
-  if (tableSelect) {
-    tableSelect.innerHTML = `<option value="">-- No Table (WFH) --</option>` +
-      seatTableGroups.map(t =>
-        `<option value="${t}">${getDisplayName(t)}</option>`
-      ).join('');
-  }
-
+  
+  // Populate Seat Select
   const seatSelect = document.getElementById('employee-seat');
   if (seatSelect) {
     const freeSeats = state.seats.filter(s => s.status === 'free');
-    seatSelect.innerHTML = `<option value="">-- No Fixed Desk --</option>` +
-      freeSeats.map(s => `<option value="${s.id}">${s.label} (${getDisplayName(s.table)})</option>`).join('');
+    seatSelect.innerHTML = `
+      <option value="">-- Working from Home (No Seat) --</option>
+      ${freeSeats.map(s => `<option value="${s.id}">${s.label} (${s.department})</option>`).join('')}
+    `;
   }
-
-  const wfhCheck = document.getElementById('employee-wfh');
-  if (wfhCheck) wfhCheck.checked = false;
 }
 
 function renderAdminLoginState() {
   document.getElementById('admin-login-panel').classList.toggle('hidden', state.adminLoggedIn);
   document.getElementById('admin-dashboard').classList.toggle('hidden', !state.adminLoggedIn);
-  const palette = document.getElementById('chair-palette');
-  if (palette) palette.classList.toggle('hidden', !state.adminLoggedIn);
   if (state.adminLoggedIn) {
     state.adminTeamFilter = ''; // Reset team filter
     renderAdminTeamFilters();
@@ -1534,7 +1571,7 @@ function renderAdminSeats() {
     return `
       <tr>
         <td>Main Floor</td><td>${seat.label}</td>
-        <td>${getTableBadge(seat.table)}</td>
+        <td>${seat.table || '-'}</td>
         <td><span class="status-badge ${seat.status}">${seat.status.toUpperCase()}</span></td>
         <td>${occupant}</td>
         <td><input type="color" value="${colorValue}" data-seat="${seat.id}" class="seat-color-picker" style="border: none; background: transparent; cursor: pointer; width: 40px; height: 26px;" /></td>
@@ -1548,35 +1585,186 @@ function renderAdminSeats() {
   document.querySelectorAll('.seat-color-picker').forEach((input) => {
     input.addEventListener('input', () => updateSeatColor(input.dataset.seat, input.value));
   });
+
+  renderAdminSeatVisual();
+}
+
+// Filters seats by the active team filter + admin search (shared by list & visual).
+function getFilteredAdminSeats() {
+  const q = state.adminSearchQuery.toLowerCase();
+  return state.seats.filter(seat => {
+    const teamMatch = !state.adminTeamFilter || seat.department === state.adminTeamFilter;
+    const searchMatch = !q || seat.id.toLowerCase().includes(q) ||
+      seat.department?.toLowerCase().includes(q) ||
+      seat.table?.toLowerCase().includes(q) ||
+      seat.occupant?.name.toLowerCase().includes(q);
+    return teamMatch && searchMatch;
+  });
+}
+
+// Visual seat arrangement: each table rendered as a card with clickable chairs.
+function renderAdminSeatVisual() {
+  const container = document.getElementById('admin-seat-visual');
+  if (!container) return;
+  const visible = new Set(getFilteredAdminSeats().map(s => s.id));
+
+  container.innerHTML = seatTableGroups.map((tableName) => {
+    const seats = state.seats.filter((seat) => seat.table === tableName);
+    if (!seats.length) return '';
+    const occupied = seats.filter(s => s.status === 'occupied').length;
+    const { topSeats, bottomSeats, topTeam, bottomTeam } = splitTableSides(seats);
+    const sameTeam = topTeam === bottomTeam;
+    const chair = (s) => {
+      const out = visible.has(s.id) ? '' : ' filtered-out';
+      const inner = s.status === 'occupied' && s.occupant
+        ? s.occupant.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+        : s.label.replace('Desk ', '');
+      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${s.label}"><span class="chair-label">${inner}</span></div>`;
+    };
+    const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
+    return `
+      <div class="admin-table-card">
+        <div class="table-visual-header">
+          <span class="table-visual-name">${tableName}</span>
+          <span class="table-count">${occupied}/${seats.length} occupied</span>
+        </div>
+        ${rowLabel(topTeam)}
+        <div class="chairs-row">${topSeats.map(chair).join('')}</div>
+        <div class="table-plank"><span class="table-plank-text">${tableName}</span></div>
+        <div class="chairs-row">${bottomSeats.map(chair).join('')}</div>
+        ${sameTeam ? '' : rowLabel(bottomTeam)}
+      </div>`;
+  }).join('') || '<p style="color:var(--muted);padding:20px;text-align:center;">No seats match the current filter.</p>';
+
+  container.querySelectorAll('.admin-chair').forEach((el) => {
+    el.addEventListener('click', (e) => { e.stopPropagation(); openAdminSeatPopover(el.dataset.seat, el); });
+  });
+}
+
+// Floating popover to assign / release / recolor a seat from the visual layout.
+function openAdminSeatPopover(seatId, anchorEl) {
+  closeAdminSeatPopover();
+  const seat = state.seats.find((s) => s.id === seatId);
+  if (!seat) return;
+
+  document.querySelectorAll('.admin-chair.selected').forEach(c => c.classList.remove('selected'));
+  anchorEl.classList.add('selected');
+
+  const pop = document.createElement('div');
+  pop.className = 'admin-seat-popover';
+  const colorValue = seat.color || getStatusColor(seat.status);
+
+  let body = `
+    <h4>${seat.label}</h4>
+    <span class="pop-status ${seat.status}">${seat.status}</span>
+    <div class="pop-row"><strong>Table:</strong> ${seat.table || '-'} · ${seat.department}</div>`;
+
+  if (seat.status === 'occupied' && seat.occupant) {
+    body += `<div class="pop-row"><strong>${seat.occupant.name}</strong> — ${seat.occupant.department}</div>
+      <div class="pop-actions">
+        <button class="btn danger" data-act="release">Release seat</button>
+      </div>`;
+  } else if (seat.status === 'reserved') {
+    body += `<div class="pop-row">Reserved seat</div>
+      <div class="pop-actions">
+        <button class="btn danger" data-act="release">Free seat</button>
+      </div>`;
+  } else {
+    body += `<div class="pop-assign">
+        <input type="text" id="pop-assign-name" placeholder="Name (optional)" />
+      </div>
+      <div class="pop-actions">
+        <button class="btn primary" data-act="assign">Assign here</button>
+      </div>`;
+  }
+
+  body += `<div class="pop-color">Seat color
+      <input type="color" value="${colorValue}" data-act="color" />
+    </div>
+    <button class="btn pop-delete" data-act="delete">🗑 Delete this seat</button>`;
+
+  pop.innerHTML = body;
+  document.body.appendChild(pop);
+
+  // Position above the chair (flip below if not enough room)
+  const r = anchorEl.getBoundingClientRect();
+  const pr = pop.getBoundingClientRect();
+  let top = r.top - pr.height - 12;
+  let flip = false;
+  if (top < 8) { top = r.bottom + 12; flip = true; }
+  pop.classList.toggle('flip', flip);
+  let left = r.left + r.width / 2 - pr.width / 2;
+  left = Math.max(10, Math.min(left, window.innerWidth - pr.width - 10));
+  pop.style.top = `${top}px`;
+  pop.style.left = `${left}px`;
+
+  pop.querySelector('[data-act="assign"]')?.addEventListener('click', async () => {
+    const name = document.getElementById('pop-assign-name')?.value.trim() || 'Guest User';
+    await adminAssignSeat(seatId, name);
+    closeAdminSeatPopover();
+  });
+  pop.querySelector('[data-act="release"]')?.addEventListener('click', async () => {
+    await toggleSeatStatus(seatId);
+    closeAdminSeatPopover();
+  });
+  pop.querySelector('[data-act="color"]')?.addEventListener('input', (e) => {
+    updateSeatColor(seatId, e.target.value);
+  });
+  pop.querySelector('[data-act="delete"]')?.addEventListener('click', async () => {
+    closeAdminSeatPopover();
+    await deleteSeat(seatId);
+  });
+}
+
+// Delete a seat from the layout entirely (frees any occupant first).
+async function deleteSeat(seatId) {
+  const seat = state.seats.find((s) => s.id === seatId);
+  if (!seat) return;
+  if (!confirm(`Delete ${seat.label} from the layout?\nThis removes the seat entirely.`)) return;
+  const emp = state.employees.find((e) => e.seat === seatId);
+  if (emp) {
+    emp.seat = null; emp.table = 'No desk'; emp.wfh = true;
+    await updateEmployee(emp.id, { seat: null, table: 'No desk', wfh: true });
+  }
+  const result = await deleteSeatRecord(seatId);
+  if (result && result.ok === false) {
+    showToast('Could not delete — database rejected it (check permissions).', 'error');
+    return;
+  }
+  state.seats = state.seats.filter((s) => s.id !== seatId);
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${seatId} deleted`, 'success');
+}
+
+async function deleteSeatRecord(id) {
+  if (!_supabase) return { ok: true };
+  const { error } = await _supabase.from('seats').delete().eq('id', id);
+  if (error) { console.error('deleteSeat failed:', error); return { ok: false, error }; }
+  return { ok: true };
+}
+
+function closeAdminSeatPopover() {
+  document.querySelectorAll('.admin-seat-popover').forEach(p => p.remove());
+  document.querySelectorAll('.admin-chair.selected').forEach(c => c.classList.remove('selected'));
+}
+
+// Occupy a free seat with a named (or guest) employee.
+async function adminAssignSeat(seatId, name) {
+  const seat = state.seats.find((s) => s.id === seatId);
+  if (!seat || seat.status === 'occupied') return;
+  seat.status = 'occupied';
+  seat.occupant = { name, department: seat.department };
+  const saved = await addEmployee({ name, department: seat.department, seat: seatId, table: seat.table, checkIn: getCurrentTime(), wfh: false });
+  state.employees.push({ ...saved });
+  await saveSeat(seat);
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${name} assigned to ${seat.label}`, 'success');
 }
 
 function getStatusColor(status) {
   if (status === 'occupied') return '#fef2f2';
   if (status === 'reserved') return '#fffbeb';
   return '#f0fdf4';
-}
-
-function getDisplayName(tableKey) {
-  return state.tableNames[tableKey] || tableKey;
-}
-
-function getDeptName(dept) {
-  return state.deptNames[dept] || dept;
-}
-
-function getTableBadge(table) {
-  const map = {
-    'Table 1': { bg: '#dbeafe', color: '#1e40af' },
-    'Table 2': { bg: '#dcfce7', color: '#166534' },
-    'Table 3': { bg: '#fef9c3', color: '#854d0e' },
-    'Table 4': { bg: '#fce7f3', color: '#9d174d' },
-    'Table 5': { bg: '#ede9fe', color: '#6b21a8' },
-    'Table 6': { bg: '#ffedd5', color: '#c2410c' },
-    'Table 7': { bg: '#e0f2fe', color: '#0369a1' },
-  };
-  const style = map[table];
-  if (!style) return `<span style="color:#94a3b8;">${table || '-'}</span>`;
-  return `<span style="display:inline-block;padding:2px 10px;background:${style.bg};color:${style.color};border-radius:20px;font-size:0.78rem;font-weight:700;">${getDisplayName(table)}</span>`;
 }
 
 async function updateEmployeeDepartment(employeeId, newDept) {
@@ -1626,33 +1814,32 @@ function renderAdminEmployees() {
     return teamMatch && searchMatch;
   });
   
-  const inlineSelectStyle = 'padding:4px 8px;background:#1e293b;color:white;border:1px solid #334155;border-radius:6px;font-size:0.82rem;cursor:pointer;';
-
   tableBody.innerHTML = filteredEmployees.map((emp) => {
     const wfhLabel = emp.wfh ? 'WFH' : 'Office';
     const btnClass = emp.wfh ? 'success' : 'secondary';
-
-    const deptOpts = departmentOptions.map(d =>
-      `<option value="${d}" ${d === emp.department ? 'selected' : ''}>${getDeptName(d)}</option>`
-    ).join('');
-    const deptDropdown = `<select data-id="${emp.id}" class="admin-dept-select" style="${inlineSelectStyle}">${deptOpts}</select>`;
-
-    const tableOpts = [`<option value="">—</option>`, ...seatTableGroups.map(t =>
-      `<option value="${t}" ${t === emp.table ? 'selected' : ''}>${getDisplayName(t)}</option>`
-    )].join('');
-    const tableDropdown = `<select data-id="${emp.id}" class="admin-table-select" style="${inlineSelectStyle}">${tableOpts}</select>`;
-
+    
+    // Create department dropdown select
+    const deptSelectOptions = departmentOptions.map(d => {
+      const selected = d === emp.department ? 'selected' : '';
+      return `<option value="${d}" ${selected}>${d}</option>`;
+    }).join('');
+    
+    const deptDropdown = `
+      <select data-id="${emp.id}" class="admin-dept-select" style="padding: 4px 8px; background: #1e293b; color: white; border: 1px solid #334155; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+        ${deptSelectOptions}
+      </select>
+    `;
+    
     return `
       <tr>
         <td>${emp.name}</td>
         <td>${deptDropdown}</td>
-        <td>${tableDropdown}</td>
-        <td>${emp.seat || '<span style="color:#94a3b8;">No desk</span>'}</td>
+        <td>${emp.wfh ? '<span style="color:#94a3b8;">—</span>' : (emp.table || 'No desk')}</td>
+        <td>${emp.seat || 'No desk'}</td>
         <td><button data-id="${emp.id}" class="btn ${btnClass} admin-wfh-toggle">${wfhLabel}</button></td>
-        <td><button data-id="${emp.id}" class="btn secondary admin-edit-employee">Edit</button></td>
         <td><button data-id="${emp.id}" class="btn danger admin-remove-employee">Remove</button></td>
       </tr>`;
-  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;">No employees found.</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align: center; padding: 20px;">No employees checked in.</td></tr>';
 
   document.querySelectorAll('.admin-wfh-toggle').forEach((btn) => {
     btn.addEventListener('click', () => toggleWfh(Number(btn.dataset.id)));
@@ -1663,25 +1850,11 @@ function renderAdminEmployees() {
   });
   
   document.querySelectorAll('.admin-dept-select').forEach((select) => {
-    select.addEventListener('change', () => {
-      updateEmployeeDepartment(Number(select.dataset.id), select.value);
-    });
-  });
-
-  document.querySelectorAll('.admin-table-select').forEach((select) => {
-    select.addEventListener('change', () => {
+    select.addEventListener('change', (e) => {
       const empId = Number(select.dataset.id);
-      const emp = state.employees.find(e => e.id === empId);
-      if (!emp) return;
-      emp.table = select.value;
-      emp.wfh = !select.value;
-      updateEmployee(empId, { table: emp.table, wfh: emp.wfh });
-      renderDirectory();
+      const newDept = select.value;
+      updateEmployeeDepartment(empId, newDept);
     });
-  });
-
-  document.querySelectorAll('.admin-edit-employee').forEach((btn) => {
-    btn.addEventListener('click', () => openEditEmployee(Number(btn.dataset.id)));
   });
 }
 
@@ -1769,7 +1942,6 @@ function renderRooms() {
           <h3>${room.name}</h3>
           <span class="room-capacity">👥 ${room.capacity}</span>
         </div>
-        ${room.description ? `<div class="room-description">${room.description}</div>` : ''}
         <span class="room-status-pill ${booked ? 'booked' : 'available'}">${booked ? 'BOOKED' : 'AVAILABLE'}</span>
         ${booked ? `<div class="room-booked-info">${room.booked_by || ''}${untilStr ? ' · ' + untilStr : ''}</div>` : ''}
         ${state.adminLoggedIn ? (booked ? releaseBtn : bookForm) : ''}
@@ -1827,333 +1999,5 @@ async function checkExpiredRooms() {
     }).eq('id', room.id) : Promise.resolve();
   }));
 }
-
-// ── Table Settings: Rename + Swap ────────────────────────────────────────────
-const TABLE_PRIMARY_DEPT = {
-  'Table 1': 'CS', 'Table 2': 'Art', 'Table 3': 'Copy',
-  'Table 4': '', 'Table 5': 'Studio', 'Table 6': 'Digital',
-  'Table 7': 'Production',
-};
-
-function renderAllAfterRename() {
-  renderFloorMap();
-  renderDirectory();
-  renderAdminSeats();
-  renderAdminEmployees();
-  renderMapDepartmentButtons();
-  renderAdminTeamFilters();
-  renderAdminTableSettings();
-}
-
-// Called via onclick — reads ALL values before any render so nothing is lost
-window.saveRowNames = function(tableKey, deptKey) {
-  const c = document.getElementById('admin-tab-tables');
-  if (!c) return;
-  const tableVal = c.querySelector(`[data-table="${tableKey}"]`)?.value.trim();
-  const deptVal  = deptKey ? c.querySelector(`[data-dept="${deptKey}"]`)?.value.trim() : '';
-  if (tableVal) state.tableNames[tableKey] = tableVal;
-  if (deptKey && deptVal) state.deptNames[deptKey] = deptVal;
-  saveSettingToDb('tableNames', state.tableNames);
-  saveSettingToDb('deptNames',  state.deptNames);
-  renderAllAfterRename();
-};
-
-window.saveDeptRowName = function(deptKey) {
-  const c = document.getElementById('admin-tab-tables');
-  const val = c?.querySelector(`[data-dept="${deptKey}"]`)?.value.trim();
-  if (!val) return;
-  state.deptNames[deptKey] = val;
-  saveSettingToDb('deptNames', state.deptNames);
-  renderAllAfterRename();
-};
-
-// ── Add Desk via Drag-and-Drop ────────────────────────────────────────────────
-
-function showAddDeskModal(x, y) {
-  state.pendingNewDesk = { x, y };
-
-  const existingNums = state.seats
-    .map(s => parseInt(s.id.replace('Desk ', ''), 10))
-    .filter(n => !isNaN(n));
-  const nextNum = existingNums.length ? Math.max(...existingNums) + 1 : 57;
-
-  document.getElementById('new-desk-label').value  = `Desk ${nextNum}`;
-  document.getElementById('new-desk-id-val').value = `Desk ${nextNum}`;
-
-  const tableSelect = document.getElementById('new-desk-table');
-  tableSelect.innerHTML = seatTableGroups.map(t =>
-    `<option value="${t}">${getDisplayName(t)}</option>`).join('');
-
-  const deptSelect = document.getElementById('new-desk-dept');
-  deptSelect.innerHTML = [...new Set(Object.keys(state.deptNames))].map(d =>
-    `<option value="${d}">${getDeptName(d)}</option>`).join('');
-
-  document.getElementById('add-desk-modal').classList.remove('hidden');
-}
-
-window.confirmAddDesk = async function() {
-  if (!state.pendingNewDesk) return;
-  const { x, y } = state.pendingNewDesk;
-  const label  = document.getElementById('new-desk-label').value.trim();
-  const id     = document.getElementById('new-desk-id-val').value.trim();
-  const table  = document.getElementById('new-desk-table').value;
-  const dept   = document.getElementById('new-desk-dept').value;
-  const dir    = y < 530 ? 'top' : 'bottom';
-
-  if (!label || !id) { alert('Desk label is required.'); return; }
-  if (state.seats.find(s => s.id === id)) { alert(`ID "${id}" already exists.`); return; }
-
-  state.customSeatPositions[id] = { x, y, dir };
-  await saveSettingToDb('customSeatPositions', state.customSeatPositions);
-
-  await insertSeat({
-    id, label, floor: 'main-floor', status: 'free',
-    occupant: null, department: dept, table, color: null,
-  });
-
-  document.getElementById('add-desk-modal').classList.add('hidden');
-  state.pendingNewDesk = null;
-  renderFloorMap();
-  renderAdminSeats();
-};
-
-window.cancelAddDesk = function() {
-  document.getElementById('add-desk-modal').classList.add('hidden');
-  state.pendingNewDesk = null;
-};
-
-window.removeCustomDesk = async function(seatId) {
-  if (!confirm(`Remove desk "${seatId}" permanently?`)) return;
-  const emp = state.employees.find(e => e.seat === seatId);
-  if (emp) {
-    emp.seat = null; emp.table = 'No desk'; emp.wfh = true;
-    await updateEmployee(emp.id, { seat: null, table: 'No desk', wfh: true });
-  }
-  await deleteSeat(seatId);
-  document.querySelectorAll('.map-seat-popup').forEach(p => p.remove());
-  renderFloorMap(); renderAdminSeats(); renderDirectory();
-};
-
-window.resetTableNames = async function() {
-  if (!confirm('Reset all table names back to their defaults (Table 1, Table 2…)?')) return;
-  Object.keys(state.tableNames).forEach(k => { state.tableNames[k] = k; });
-  await saveSettingToDb('tableNames', state.tableNames);
-  renderAllAfterRename();
-};
-
-window.resetDeptNames = async function() {
-  if (!confirm('Reset all team/department names back to their defaults (CS, Art, Copy…)?')) return;
-  Object.keys(state.deptNames).forEach(k => { state.deptNames[k] = k; });
-  await saveSettingToDb('deptNames', state.deptNames);
-  renderAllAfterRename();
-};
-
-window.resetAllNames = async function() {
-  if (!confirm('Reset ALL table and team names back to their defaults?')) return;
-  Object.keys(state.tableNames).forEach(k => { state.tableNames[k] = k; });
-  Object.keys(state.deptNames).forEach(k => { state.deptNames[k] = k; });
-  await saveSettingToDb('tableNames', state.tableNames);
-  await saveSettingToDb('deptNames',  state.deptNames);
-  renderAllAfterRename();
-};
-
-window.doSwapDesks = function() {
-  const aId = Number(document.getElementById('swap-emp-a').value);
-  const bId = Number(document.getElementById('swap-emp-b').value);
-  if (!aId || !bId) { alert('Please select two employees.'); return; }
-  if (aId === bId) { alert('Please select two different employees.'); return; }
-  swapEmployeeDesks(aId, bId);
-};
-
-function renderAdminTableSettings() {
-  const container = document.getElementById('admin-tab-tables');
-  if (!container) return;
-
-  const seatedEmps = state.employees.filter(e => e.seat && !e.wfh);
-  const empOptions = seatedEmps.length
-    ? seatedEmps.map(e => `<option value="${e.id}">${e.name} — ${e.seat} (${getDisplayName(e.table)})</option>`).join('')
-    : '<option disabled>No employees with assigned desks</option>';
-
-  const tableRows = seatTableGroups.map(key => {
-    const deptKey = TABLE_PRIMARY_DEPT[key] || '';
-    return `
-    <div class="table-rename-row">
-      <span class="table-rename-label">${key}</span>
-      <input class="table-rename-input" data-table="${key}" type="text" value="${getDisplayName(key)}" placeholder="Table name…" />
-      <input class="table-rename-input" data-dept="${deptKey}" type="text" value="${getDeptName(deptKey)}" placeholder="Team name…" />
-      <button class="btn primary small" onclick="saveRowNames('${key}','${deptKey}')">Save</button>
-    </div>`;
-  }).join('');
-
-  const extraDepts = ['HR', 'Finance', 'IT'];
-  const extraRows = extraDepts.map(d => `
-    <div class="table-rename-row">
-      <span class="table-rename-label">${d}</span>
-      <input class="table-rename-input" data-dept="${d}" type="text" value="${getDeptName(d)}" placeholder="${d}" />
-      <button class="btn primary small" onclick="saveDeptRowName('${d}')">Save</button>
-    </div>`).join('');
-
-  container.innerHTML = `
-    <div class="admin-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <h3 style="margin:0;">Rename Tables &amp; Teams</h3>
-        <div style="display:flex;gap:6px;">
-          <button class="btn" style="background:#e67e22;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetTableNames()">Reset Table</button>
-          <button class="btn" style="background:#8e44ad;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetDeptNames()">Reset Dept</button>
-          <button class="btn" style="background:#e74c3c;color:#fff;font-size:0.8rem;padding:4px 12px;" onclick="resetAllNames()">Reset All</button>
-        </div>
-      </div>
-      <p style="color:var(--muted);font-size:0.87rem;margin:0 0 4px;">Edit the table label and its team name. Changes update the floor map, filters, and directory.</p>
-      <div class="table-rename-header-row">
-        <span class="table-rename-label"></span>
-        <span style="flex:1;font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Table Name</span>
-        <span style="flex:1;font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Team Name</span>
-        <span style="width:60px;"></span>
-      </div>
-      <div class="table-rename-list">${tableRows}</div>
-    </div>
-    <div class="admin-card" style="margin-top:20px;">
-      <h3>Support Department Names</h3>
-      <p style="color:var(--muted);font-size:0.87rem;margin:0 0 12px;">Rename HR, Finance and IT team labels.</p>
-      <div class="table-rename-list">${extraRows}</div>
-    </div>
-    <div class="admin-card" style="margin-top:20px;">
-      <h3>Swap Employee Desks</h3>
-      <p style="color:var(--muted);font-size:0.87rem;margin:0 0 16px;">Select two employees to instantly swap their desk and table assignments.</p>
-      <div class="swap-controls">
-        <select id="swap-emp-a">${empOptions}</select>
-        <span class="swap-icon">⇄</span>
-        <select id="swap-emp-b">${empOptions}</select>
-        <button class="btn primary" onclick="doSwapDesks()">Swap Desks</button>
-      </div>
-    </div>`;
-}
-
-async function swapEmployeeDesks(empAId, empBId) {
-  const empA = state.employees.find(e => e.id === empAId);
-  const empB = state.employees.find(e => e.id === empBId);
-  if (!empA?.seat || !empB?.seat) { alert('Both employees must have an assigned desk.'); return; }
-  const seatA = state.seats.find(s => s.id === empA.seat);
-  const seatB = state.seats.find(s => s.id === empB.seat);
-  if (!seatA || !seatB) return;
-
-  [seatA.occupant, seatB.occupant] = [{ ...seatB.occupant }, { ...seatA.occupant }];
-  [empA.seat, empB.seat] = [empB.seat, empA.seat];
-  [empA.table, empB.table] = [empB.table, empA.table];
-
-  await Promise.all([
-    saveSeat(seatA), saveSeat(seatB),
-    updateEmployee(empAId, { seat: empA.seat, table: empA.table }),
-    updateEmployee(empBId, { seat: empB.seat, table: empB.table }),
-  ]);
-
-  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
-  renderAdminTableSettings();
-  alert(`Swapped: ${empA.name}  ↔  ${empB.name}`);
-}
-window.swapEmployeeDesks = swapEmployeeDesks;
-
-// ── Edit Employee Modal ───────────────────────────────────────────────────────
-function openEditEmployee(empId) {
-  const emp = state.employees.find(e => e.id === empId);
-  if (!emp) return;
-  state.editingEmployeeId = empId;
-
-  document.getElementById('edit-emp-name').value = emp.name;
-
-  const deptSelect = document.getElementById('edit-emp-dept');
-  deptSelect.innerHTML = departmentOptions.map(d =>
-    `<option value="${d}" ${d === emp.department ? 'selected' : ''}>${getDeptName(d)}</option>`
-  ).join('');
-
-  const tableSelect = document.getElementById('edit-emp-table');
-  if (tableSelect) {
-    tableSelect.innerHTML = `<option value="">-- No Table --</option>` +
-      seatTableGroups.map(t =>
-        `<option value="${t}" ${t === emp.table ? 'selected' : ''}>${getDisplayName(t)}</option>`
-      ).join('');
-  }
-
-  const seatSelect = document.getElementById('edit-emp-seat');
-  const availableSeats = state.seats.filter(s => s.status === 'free' || s.id === emp.seat);
-  seatSelect.innerHTML = `<option value="">-- No Fixed Desk --</option>` +
-    availableSeats.map(s =>
-      `<option value="${s.id}" ${s.id === emp.seat ? 'selected' : ''}>${s.label} — ${getDisplayName(s.table)}</option>`
-    ).join('');
-
-  const wfhCheck = document.getElementById('edit-emp-wfh');
-  if (wfhCheck) wfhCheck.checked = !!emp.wfh;
-
-  document.getElementById('edit-employee-modal').classList.remove('hidden');
-}
-window.openEditEmployee = openEditEmployee;
-
-async function saveEditEmployee() {
-  const empId = state.editingEmployeeId;
-  if (!empId) return;
-  const emp = state.employees.find(e => e.id === empId);
-  if (!emp) return;
-
-  const newName   = document.getElementById('edit-emp-name').value.trim();
-  const newDept   = document.getElementById('edit-emp-dept').value;
-  const newTable  = document.getElementById('edit-emp-table')?.value || '';
-  const newSeatId = document.getElementById('edit-emp-seat').value;
-  const newWfh    = document.getElementById('edit-emp-wfh')?.checked || false;
-
-  if (!newName) { alert('Please enter a name.'); return; }
-
-  // Handle seat change
-  if (newSeatId !== (emp.seat || '')) {
-    if (emp.seat) {
-      const oldSeat = state.seats.find(s => s.id === emp.seat);
-      if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; await saveSeat(oldSeat); }
-    }
-    if (newSeatId) {
-      const newSeat = state.seats.find(s => s.id === newSeatId);
-      if (newSeat && (newSeat.status === 'free' || newSeat.id === emp.seat)) {
-        newSeat.status = 'occupied';
-        newSeat.occupant = { name: newName, department: newDept };
-        await saveSeat(newSeat);
-        emp.seat  = newSeatId;
-        emp.table = newSeat.table;
-      }
-    } else {
-      emp.seat = null;
-      // Table comes from the table dropdown if seat is cleared
-      emp.table = newTable || (newWfh ? 'No desk' : 'Table 7');
-    }
-  } else if (emp.seat) {
-    const seat = state.seats.find(s => s.id === emp.seat);
-    if (seat && seat.occupant) {
-      seat.occupant.name = newName;
-      seat.occupant.department = newDept;
-      await saveSeat(seat);
-    }
-  } else {
-    // No seat was set before and no seat selected now — use table dropdown
-    emp.table = newTable || (newWfh ? 'No desk' : emp.table || 'Table 7');
-  }
-
-  emp.name       = newName;
-  emp.department = newDept;
-  emp.wfh        = newWfh;
-
-  await updateEmployee(empId, { name: emp.name, department: emp.department, seat: emp.seat, table: emp.table, wfh: emp.wfh });
-
-  closeEditModal();
-  renderFloorMap();
-  renderDirectory();
-  renderAdminSeats();
-  renderAdminEmployees();
-  renderAdminTeamFilters();
-  renderMapDepartmentButtons();
-}
-window.saveEditEmployee = saveEditEmployee;
-
-function closeEditModal() {
-  state.editingEmployeeId = null;
-  document.getElementById('edit-employee-modal').classList.add('hidden');
-}
-window.closeEditModal = closeEditModal;
 
 initApp();
