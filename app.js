@@ -1856,10 +1856,10 @@ function renderAdminSeatVisual() {
     const sameTeam = topTeam === bottomTeam;
     const chair = (s) => {
       const out = visible.has(s.id) ? '' : ' filtered-out';
-      const inner = s.status === 'occupied' && s.occupant
-        ? s.occupant.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-        : s.label.replace('Desk ', '');
-      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${s.label}"><span class="chair-label">${inner}</span></div>`;
+      const num = s.label.replace('Desk ', '');
+      const name = s.status === 'occupied' && s.occupant ? s.occupant.name
+        : s.status === 'reserved' ? 'Reserved' : 'Free';
+      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
     };
     const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
     return `
