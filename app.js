@@ -157,6 +157,44 @@ const seatMeta = {};
   });
 })();
 
+const SEATS_PER_ROW = 5; // each table has 2 rows; a row holds at most this many desks
+
+// Re-derive seatMeta (which row/side each desk sits on) from the ACTUAL seats in
+// state, so dynamically-added desks get placed correctly. Rule: a desk prefers
+// its team's side; each row caps at SEATS_PER_ROW; extras overflow to the other row.
+function rebuildSeatMeta() {
+  for (const k in seatMeta) delete seatMeta[k];
+  const deskNum = (id) => { const n = parseInt(String(id).replace(/\D/g, ''), 10); return Number.isNaN(n) ? 0 : n; };
+
+  // Preferred team for each side, from the table layout config.
+  const sideTeams = {};
+  tableConfig.forEach((t) => {
+    sideTeams[t.table] = { top: t.sides[0]?.team, bottom: t.sides[1]?.team || t.sides[0]?.team };
+  });
+
+  const byTable = {};
+  state.seats.forEach((s) => {
+    if (!s.id || String(s.id).startsWith('Cabin')) return;
+    (byTable[s.table] = byTable[s.table] || []).push(s);
+  });
+
+  Object.entries(byTable).forEach(([table, seats]) => {
+    seats.sort((a, b) => deskNum(a.id) - deskNum(b.id));
+    const teams = sideTeams[table] || { top: seats[0]?.department, bottom: seats[0]?.department };
+    let top = 0, bottom = 0;
+    seats.forEach((s) => {
+      let side;
+      if (s.department === teams.top && top < SEATS_PER_ROW) side = 'top';
+      else if (s.department === teams.bottom && bottom < SEATS_PER_ROW) side = 'bottom';
+      else if (top < SEATS_PER_ROW) side = 'top';
+      else if (bottom < SEATS_PER_ROW) side = 'bottom';
+      else side = 'top'; // beyond 2 full rows — shouldn't happen (add-seat caps at 10)
+      const sideIndex = side === 'top' ? top++ : bottom++;
+      seatMeta[s.id] = { table, department: s.department, side, sideIndex };
+    });
+  });
+}
+
 const seatTableGroups = tableConfig.map((t) => t.table);
 
 // Ordered, de-duplicated team list
@@ -212,6 +250,7 @@ function initSeats() {
     }
   });
   state.seats = seats;
+  rebuildSeatMeta();
   state.employees = mockEmployees.map((emp) => ({
     wfh: false,
     ...emp,
@@ -244,6 +283,7 @@ async function loadFromServer() {
     if (seatsErr || empsErr) throw new Error(seatsErr?.message || empsErr?.message);
     if (!seats?.length || !emps?.length) throw new Error('DB tables empty — run supabase-schema.sql');
     state.seats = sortSeats(seats);
+    rebuildSeatMeta();
     state.employees = emps.map((emp) => ({ wfh: emp.wfh || false, ...emp }));
     if (rooms?.length) state.meetingRooms = rooms;
     else if (!state.meetingRooms.length) state.meetingRooms = defaultMeetingRooms.map(r => ({ ...r }));
@@ -1603,9 +1643,16 @@ async function handleSeatAdd(event) {
     alert(`A seat called "${label}" already exists.`);
     return;
   }
+  const tableCount = state.seats.filter((s) => s.table === table).length;
+  if (tableCount >= SEATS_PER_ROW * 2) {
+    alert(`${table} is full — max ${SEATS_PER_ROW * 2} desks (${SEATS_PER_ROW} per row).`);
+    return;
+  }
   const seat = { id: label, label, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
   const saved = await createSeat(seat);
   state.seats.push({ ...seat, ...saved });
+  state.seats = sortSeats(state.seats);
+  rebuildSeatMeta();
   labelInput.value = '';
   populateAddSeatFormOptions();
   renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
@@ -1830,6 +1877,7 @@ async function deleteSeat(seatId) {
     return;
   }
   state.seats = state.seats.filter((s) => s.id !== seatId);
+  rebuildSeatMeta();
   renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
   showToast(`${seatId} deleted`, 'success');
 }
