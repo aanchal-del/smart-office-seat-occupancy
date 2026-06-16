@@ -1879,3 +1879,12 @@ input:focus, select:focus {
   background: #fff;
 }
 .seat-rename-bar input { width: 150px; }
+
+/* ── Admin Seat Control: drag chair → drop on a table ─────────────────── */
+.admin-chair[draggable="true"] { cursor: grab; }
+.admin-chair.dragging { opacity: 0.45; transform: scale(0.92); }
+.admin-table-card.drag-over {
+  outline: 3px dashed var(--accent);
+  outline-offset: 4px;
+  background: linear-gradient(180deg, #eff6ff 0%, #e0ecff 100%);
+}

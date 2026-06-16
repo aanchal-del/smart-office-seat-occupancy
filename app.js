@@ -1197,6 +1197,55 @@ async function handleSeatDrop(event, targetSeatId) {
 }
 window.handleSeatDrop = handleSeatDrop;
 
+// ── Admin Seat Control: drag a chair onto a table to relocate the person ────────
+function handleAdminTableDragOver(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add('drag-over');
+}
+function handleAdminTableDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+async function handleAdminTableDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  const targetTable = event.currentTarget.dataset.table;
+  let data;
+  try { data = JSON.parse(event.dataTransfer.getData('text/plain')); } catch { return; }
+  if (data && data.type === 'seat') await moveSeatToTable(data.id, targetTable);
+}
+
+// Move the occupant of sourceSeat to the first free desk at targetTable.
+async function moveSeatToTable(sourceSeatId, targetTable) {
+  const sourceSeat = state.seats.find((s) => s.id === sourceSeatId);
+  if (!sourceSeat || sourceSeat.status !== 'occupied' || !sourceSeat.occupant) return;
+  if (sourceSeat.table === targetTable) return; // already there
+  const freeSeat = state.seats.find((s) => s.table === targetTable && s.status === 'free');
+  if (!freeSeat) { showToast(`No free desk at ${targetTable}.`, 'error'); return; }
+
+  const personName = sourceSeat.occupant.name;
+  const emp = state.employees.find((e) => e.seat === sourceSeatId);
+
+  freeSeat.status = 'occupied';
+  freeSeat.occupant = { ...sourceSeat.occupant };
+  sourceSeat.status = 'free';
+  sourceSeat.occupant = null;
+  if (emp) {
+    emp.seat = freeSeat.id;
+    emp.table = targetTable;
+    emp.wfh = false;
+    await updateEmployee(emp.id, { seat: freeSeat.id, table: targetTable, wfh: false });
+  }
+  await saveSeat(sourceSeat);
+  await saveSeat(freeSeat);
+
+  rebuildSeatMeta();
+  renderFloorMap();
+  renderDirectory();
+  renderAdminSeats();
+  renderAdminEmployees();
+  showToast(`${personName} moved to ${targetTable}`, 'success');
+}
+
 function renderTableVisual() {
   const mapContainer = document.getElementById('floor-map');
   mapContainer.innerHTML = '';
@@ -1859,11 +1908,12 @@ function renderAdminSeatVisual() {
       const num = s.label.replace('Desk ', '');
       const name = s.status === 'occupied' && s.occupant ? s.occupant.name
         : s.status === 'reserved' ? 'Reserved' : 'Free';
-      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
+      const drag = s.status === 'occupied' ? ' draggable="true"' : '';
+      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}"${drag} title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
     };
     const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
     return `
-      <div class="admin-table-card">
+      <div class="admin-table-card" data-table="${tableName}">
         <div class="table-visual-header">
           <span class="table-visual-name">${tableName}</span>
           <span class="table-count">${occupied}/${seats.length} occupied</span>
@@ -1878,6 +1928,20 @@ function renderAdminSeatVisual() {
 
   container.querySelectorAll('.admin-chair').forEach((el) => {
     el.addEventListener('click', (e) => { e.stopPropagation(); openAdminSeatPopover(el.dataset.seat, el); });
+  });
+
+  // Drag a chair (occupied seat) onto a table card to relocate the person.
+  container.querySelectorAll('.admin-chair[draggable="true"]').forEach((el) => {
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'seat', id: el.dataset.seat }));
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  });
+  container.querySelectorAll('.admin-table-card').forEach((card) => {
+    card.addEventListener('dragover', handleAdminTableDragOver);
+    card.addEventListener('dragleave', handleAdminTableDragLeave);
+    card.addEventListener('drop', handleAdminTableDrop);
   });
 }
 
