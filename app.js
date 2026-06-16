@@ -163,6 +163,7 @@ const SEATS_PER_ROW = 5; // each table has 2 rows; a row holds at most this many
 // state, so dynamically-added desks get placed correctly. Rule: a desk prefers
 // its team's side; each row caps at SEATS_PER_ROW; extras overflow to the other row.
 function rebuildSeatMeta() {
+  recomputeTableGroups();
   for (const k in seatMeta) delete seatMeta[k];
   const deskNum = (id) => { const n = parseInt(String(id).replace(/\D/g, ''), 10); return Number.isNaN(n) ? 0 : n; };
 
@@ -195,7 +196,29 @@ function rebuildSeatMeta() {
   });
 }
 
-const seatTableGroups = tableConfig.map((t) => t.table);
+// Ordered list of tables. Starts from config, but is recomputed from the actual
+// seats after every load so renamed/added tables are reflected automatically.
+let seatTableGroups = tableConfig.map((t) => t.table);
+
+// Recompute the ordered table list from the seats (ordered by lowest desk number).
+function recomputeTableGroups() {
+  const minDesk = {};
+  state.seats.forEach((s) => {
+    if (!s.table || String(s.id).startsWith('Cabin')) return;
+    const n = parseInt(String(s.id).replace(/\D/g, ''), 10) || 0;
+    minDesk[s.table] = (s.table in minDesk) ? Math.min(minDesk[s.table], n) : n;
+  });
+  const tables = Object.keys(minDesk).sort((a, b) => minDesk[a] - minDesk[b]);
+  if (tables.length) seatTableGroups = tables;
+}
+
+// All team labels currently in use (from seat data) plus the config defaults.
+function currentTeams() {
+  const set = new Set();
+  state.seats.forEach((s) => { if (s.department) set.add(s.department); });
+  TEAMS.forEach((t) => set.add(t));
+  return [...set];
+}
 
 // Ordered, de-duplicated team list
 const TEAMS = [];
@@ -470,6 +493,20 @@ function bindUIActions() {
   document.getElementById('employee-name').addEventListener('input', () => autofillDeptFromName('employee-name', 'employee-dept'));
   const seatForm = document.getElementById('seat-form');
   if (seatForm) seatForm.addEventListener('submit', handleSeatAdd);
+  const renameTableBtn = document.getElementById('rename-table-btn');
+  if (renameTableBtn) renameTableBtn.addEventListener('click', () => {
+    const oldName = document.getElementById('rename-table-select').value;
+    const input = document.getElementById('rename-table-input');
+    renameTable(oldName, input.value);
+    input.value = '';
+  });
+  const renameTeamBtn = document.getElementById('rename-team-btn');
+  if (renameTeamBtn) renameTeamBtn.addEventListener('click', () => {
+    const oldName = document.getElementById('rename-team-select').value;
+    const input = document.getElementById('rename-team-input');
+    renameTeam(oldName, input.value);
+    input.value = '';
+  });
   document.getElementById('floor-map').addEventListener('click', handleChairClick);
 
   // Admin seat view toggle: Visual layout ⇄ List
@@ -529,22 +566,30 @@ function switchView(view) {
 }
 
 // ── Floor map rendering ───────────────────────────────────────────────────────
-// 3 tables per band, 2 bands. Each table: 5 seats top row, 5 seats bottom row.
-const TABLE_LAYOUT = {
-  'Table 1': { cx: 250,  topY: 240, bottomY: 340 },
-  'Table 2': { cx: 650,  topY: 240, bottomY: 340 },
-  'Table 3': { cx: 1050, topY: 240, bottomY: 340 },
-  'Table 4': { cx: 250,  topY: 560, bottomY: 660 },
-  'Table 5': { cx: 650,  topY: 560, bottomY: 660 },
-  'Table 6': { cx: 1050, topY: 560, bottomY: 660 },
-  'Table 7': { cx: 650,  topY: 740, bottomY: 800 },
-};
+// Layout is positional (by table order), NOT keyed by table name — so tables can
+// be renamed freely without breaking the floor map. 3 tables per band, 2 bands,
+// plus a 7th centred below. Each table: up to 5 desks per row, 2 rows.
+const TABLE_POSITIONS = [
+  { cx: 250,  topY: 240, bottomY: 340 },
+  { cx: 650,  topY: 240, bottomY: 340 },
+  { cx: 1050, topY: 240, bottomY: 340 },
+  { cx: 250,  topY: 560, bottomY: 660 },
+  { cx: 650,  topY: 560, bottomY: 660 },
+  { cx: 1050, topY: 560, bottomY: 660 },
+  { cx: 650,  topY: 740, bottomY: 800 },
+];
 const SEAT_GAP = 54;
+
+// Position for a table by its current order in seatTableGroups.
+function tableLayout(tableName) {
+  const i = seatTableGroups.indexOf(tableName);
+  return i >= 0 ? TABLE_POSITIONS[i] : undefined;
+}
 
 function getSeatCoordinates(seatId) {
   const m = seatMeta[seatId];
   if (!m) return null;
-  const L = TABLE_LAYOUT[m.table];
+  const L = tableLayout(m.table);
   if (!L) return null;
   const span = 4 * SEAT_GAP; // 5 seats → centre the row on the table
   const x = L.cx - span / 2 + m.sideIndex * SEAT_GAP;
@@ -706,15 +751,15 @@ function renderFloorMap() {
   outerWall.setAttribute('rx', '8');
   viewport.appendChild(outerWall);
 
-  // 2. Draw 6 Main Tables
+  // 2. Draw the tables (positional, supports renamed tables)
   const tablesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   tablesGroup.setAttribute('class', 'tables-group');
-  
-  const tablesConfig = tableConfig.filter((t) => TABLE_LAYOUT[t.table]).map((t) => {
-    const L = TABLE_LAYOUT[t.table];
-    const teams = [...new Set(t.sides.map((s) => s.team))];
+
+  const tablesConfig = seatTableGroups.filter((name) => tableLayout(name)).map((name) => {
+    const L = tableLayout(name);
+    const teams = [...new Set(state.seats.filter((s) => s.table === name).map((s) => s.department))];
     return {
-      id: t.table,
+      id: name,
       dept: teams.join(' / '),
       xCenter: L.cx,
       yCenter: (L.topY + L.bottomY) / 2,
@@ -1622,8 +1667,58 @@ function populateAddSeatFormOptions() {
   const teamSelect = document.getElementById('seat-team');
   const labelInput = document.getElementById('seat-label');
   if (tableSelect) tableSelect.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
-  if (teamSelect) teamSelect.innerHTML = departmentOptions.map((d) => `<option value="${d}">${d}</option>`).join('');
+  if (teamSelect) teamSelect.innerHTML = currentTeams().map((d) => `<option value="${d}">${d}</option>`).join('');
   if (labelInput && !labelInput.value.trim()) labelInput.value = getNextDeskLabel();
+  populateRenameOptions();
+}
+
+// Populate the table/team dropdowns in the rename bar.
+function populateRenameOptions() {
+  const tableSel = document.getElementById('rename-table-select');
+  const teamSel = document.getElementById('rename-team-select');
+  if (tableSel) tableSel.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
+  if (teamSel) teamSel.innerHTML = currentTeams().map((t) => `<option value="${t}">${t}</option>`).join('');
+}
+
+// Re-render every view after a structural change (rename, add, delete).
+function refreshAllViews() {
+  rebuildSeatMeta();
+  renderFloorMap();
+  renderDirectory();
+  renderDirectoryTableFilterOptions();
+  renderAdminSeats();
+  renderAdminEmployees();
+  renderAdminTeamFilters();
+  populateAdminAddEmployeeFormOptions();
+}
+
+// Rename a table everywhere (seats + employees), persisting to Supabase.
+async function renameTable(oldName, newName) {
+  newName = (newName || '').trim();
+  if (!newName || newName === oldName) return;
+  if (seatTableGroups.includes(newName)) { alert(`A table named "${newName}" already exists.`); return; }
+  const seats = state.seats.filter((s) => s.table === oldName);
+  for (const s of seats) { s.table = newName; await saveSeat(s); }
+  const emps = state.employees.filter((e) => e.table === oldName);
+  for (const e of emps) { e.table = newName; await updateEmployee(e.id, { table: newName }); }
+  refreshAllViews();
+  showToast(`Table renamed to "${newName}"`, 'success');
+}
+
+// Rename a team/department everywhere (seats, occupants, employees), persisting.
+async function renameTeam(oldName, newName) {
+  newName = (newName || '').trim();
+  if (!newName || newName === oldName) return;
+  const seats = state.seats.filter((s) => s.department === oldName);
+  for (const s of seats) {
+    s.department = newName;
+    if (s.occupant) s.occupant.department = newName;
+    await saveSeat(s);
+  }
+  const emps = state.employees.filter((e) => e.department === oldName);
+  for (const e of emps) { e.department = newName; await updateEmployee(e.id, { department: newName }); }
+  refreshAllViews();
+  showToast(`Team "${oldName}" renamed to "${newName}"`, 'success');
 }
 
 async function handleSeatAdd(event) {

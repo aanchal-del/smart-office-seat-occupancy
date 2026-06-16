@@ -1837,3 +1837,30 @@ input:focus, select:focus {
   background: #fff;
 }
 .seat-add-form input { width: 110px; }
+
+/* ── Admin: rename tables / teams ─────────────────────────────────────── */
+.seat-rename-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: rgba(100, 116, 139, 0.06);
+  border: 1px dashed rgba(100, 116, 139, 0.3);
+  border-radius: 12px;
+}
+.seat-rename-bar .rename-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.seat-rename-bar select,
+.seat-rename-bar input {
+  padding: 6px 9px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.seat-rename-bar input { width: 150px; }
