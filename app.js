@@ -569,16 +569,21 @@ function switchView(view) {
 // Layout is positional (by table order), NOT keyed by table name — so tables can
 // be renamed freely without breaking the floor map. 3 tables per band, 2 bands,
 // plus a 7th centred below. Each table: up to 5 desks per row, 2 rows.
+// Floor-map canvas (large; pan/zoom handle the size). Layout matches the sketch:
+//   Production on top, then Table 1·2·3 in a row, Table 4 under Table 2,
+//   Tables 5 & 6 stacked under Table 3.
+const VIEW_W = 1560;
+const VIEW_H = 1160;
 const TABLE_POSITIONS = [
-  { cx: 250,  topY: 240, bottomY: 340 },
-  { cx: 650,  topY: 240, bottomY: 340 },
-  { cx: 1050, topY: 240, bottomY: 340 },
-  { cx: 250,  topY: 560, bottomY: 660 },
-  { cx: 650,  topY: 560, bottomY: 660 },
-  { cx: 1050, topY: 560, bottomY: 660 },
-  { cx: 650,  topY: 740, bottomY: 800 },
+  { cx: 300,  topY: 400,  bottomY: 500 },   // index 0 → Table 1  (left column, row 1)
+  { cx: 300,  topY: 680,  bottomY: 780 },   // index 1 → Table 2  (left column, row 2)
+  { cx: 300,  topY: 960,  bottomY: 1060 },  // index 2 → Table 3  (left column, row 3)
+  { cx: 780,  topY: 680,  bottomY: 780 },   // index 3 → Table 4  (beside Table 2)
+  { cx: 780,  topY: 960,  bottomY: 1060 },  // index 4 → Table 5  (beside Table 3)
+  { cx: 1260, topY: 960,  bottomY: 1060 },  // index 5 → Table 6  (beside Table 5)
+  { cx: 780,  topY: 130,  bottomY: 230 },   // index 6 → Production (top, centred)
 ];
-const SEAT_GAP = 54;
+const SEAT_GAP = 92;
 
 // Position for a table by its current order in seatTableGroups.
 function tableLayout(tableName) {
@@ -655,7 +660,7 @@ function renderFloorMap() {
   // Create SVG element
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
-  svg.setAttribute('viewBox', '0 0 1300 850');
+  svg.setAttribute('viewBox', `0 0 ${VIEW_W} ${VIEW_H}`);
   svg.style.cursor = state.isDraggingMap ? 'grabbing' : 'grab';
   svg.style.userSelect = 'none';
 
@@ -689,48 +694,28 @@ function renderFloorMap() {
   viewport.setAttribute('transform', `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`);
   svg.appendChild(viewport);
 
-  // 1. Draw Background & Spacing Tiles (5 rows, 6 columns)
+  // 1. Optional dashed grid spanning the whole canvas
   const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   gridGroup.setAttribute('class', 'room-grid');
-  
-  // Draw Walkways (Row 3 Y=370 to 530, and Row 5 Y=690 to 850)
-  const walkwayRow3 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  walkwayRow3.setAttribute('x', '50');
-  walkwayRow3.setAttribute('y', '370');
-  walkwayRow3.setAttribute('width', '1200');
-  walkwayRow3.setAttribute('height', '160');
-  walkwayRow3.setAttribute('fill', '#f8fafc');
-  walkwayRow3.setAttribute('opacity', '0.7');
-  gridGroup.appendChild(walkwayRow3);
 
-  const walkwayRow5 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  walkwayRow5.setAttribute('x', '50');
-  walkwayRow5.setAttribute('y', '690');
-  walkwayRow5.setAttribute('width', '1200');
-  walkwayRow5.setAttribute('height', '160');
-  walkwayRow5.setAttribute('fill', '#f8fafc');
-  walkwayRow5.setAttribute('opacity', '0.7');
-  gridGroup.appendChild(walkwayRow5);
-  
-  // Draw Tile Borders if state.showActualLayout is true
   if (state.showActualLayout) {
-    for (let r = 0; r <= 5; r++) {
+    for (let y = 50; y <= VIEW_H - 50; y += 160) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', '50');
-      line.setAttribute('y1', (50 + r * 160).toString());
-      line.setAttribute('x2', '1250');
-      line.setAttribute('y2', (50 + r * 160).toString());
+      line.setAttribute('y1', y.toString());
+      line.setAttribute('x2', (VIEW_W - 50).toString());
+      line.setAttribute('y2', y.toString());
       line.setAttribute('stroke', '#cbd5e1');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '4,4');
       gridGroup.appendChild(line);
     }
-    for (let c = 0; c <= 6; c++) {
+    for (let x = 50; x <= VIEW_W - 50; x += 200) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', (50 + c * 200).toString());
+      line.setAttribute('x1', x.toString());
       line.setAttribute('y1', '50');
-      line.setAttribute('x2', (50 + c * 200).toString());
-      line.setAttribute('y2', '850');
+      line.setAttribute('x2', x.toString());
+      line.setAttribute('y2', (VIEW_H - 50).toString());
       line.setAttribute('stroke', '#cbd5e1');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '4,4');
@@ -743,8 +728,8 @@ function renderFloorMap() {
   const outerWall = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   outerWall.setAttribute('x', '50');
   outerWall.setAttribute('y', '50');
-  outerWall.setAttribute('width', '1200');
-  outerWall.setAttribute('height', '800');
+  outerWall.setAttribute('width', (VIEW_W - 100).toString());
+  outerWall.setAttribute('height', (VIEW_H - 100).toString());
   outerWall.setAttribute('fill', 'none');
   outerWall.setAttribute('stroke', '#475569');
   outerWall.setAttribute('stroke-width', '4');
@@ -763,7 +748,7 @@ function renderFloorMap() {
       dept: teams.join(' / '),
       xCenter: L.cx,
       yCenter: (L.topY + L.bottomY) / 2,
-      width: 270,
+      width: 4 * SEAT_GAP + 64, // span the row of seats
     };
   });
 
@@ -785,7 +770,7 @@ function renderFloorMap() {
     tableText.setAttribute('y', (table.yCenter + 4).toString());
     tableText.setAttribute('text-anchor', 'middle');
     tableText.setAttribute('fill', '#ffffff');
-    tableText.setAttribute('font-size', '10');
+    tableText.setAttribute('font-size', '14');
     tableText.setAttribute('font-weight', 'bold');
     tableText.setAttribute('filter', 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))');
     tableText.textContent = `${table.id} (${table.dept})`;
@@ -898,6 +883,35 @@ function renderFloorMap() {
       labelText.textContent = seat.label.replace('Desk ', '');
     }
     seatNode.appendChild(labelText);
+
+    // Full name label (outside the chair, so it's fully readable)
+    const displayName = seat.status === 'occupied' && seat.occupant ? seat.occupant.name
+      : seat.status === 'reserved' ? 'Reserved' : '';
+    if (displayName && !filteredOut) {
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const words = displayName.split(' ');
+      const line1 = words[0];
+      const line2 = words.slice(1).join(' ');
+      const nameText = document.createElementNS(SVG_NS, 'text');
+      nameText.setAttribute('x', x.toString());
+      nameText.setAttribute('text-anchor', 'middle');
+      nameText.setAttribute('font-size', '11');
+      nameText.setAttribute('font-weight', '600');
+      nameText.setAttribute('fill', '#1e293b');
+      nameText.setAttribute('y', (dir === 'top' ? y - 30 : y + 28).toString());
+      const t1 = document.createElementNS(SVG_NS, 'tspan');
+      t1.setAttribute('x', x.toString());
+      t1.textContent = line1;
+      nameText.appendChild(t1);
+      if (line2) {
+        const t2 = document.createElementNS(SVG_NS, 'tspan');
+        t2.setAttribute('x', x.toString());
+        t2.setAttribute('dy', '12');
+        t2.textContent = line2;
+        nameText.appendChild(t2);
+      }
+      seatNode.appendChild(nameText);
+    }
 
     desksGroup.appendChild(seatNode);
   });
@@ -1244,6 +1258,51 @@ async function moveSeatToTable(sourceSeatId, targetTable) {
   renderAdminSeats();
   renderAdminEmployees();
   showToast(`${personName} moved to ${targetTable}`, 'success');
+}
+
+// Drop a dragged chair onto a specific seat: move into a free seat, or swap with
+// an occupied one. Works in any direction / to either side of any table.
+async function adminMoveOrSwap(sourceSeatId, targetSeatId) {
+  if (!sourceSeatId || sourceSeatId === targetSeatId) return;
+  const source = state.seats.find((s) => s.id === sourceSeatId);
+  const target = state.seats.find((s) => s.id === targetSeatId);
+  if (!source || !target || source.status !== 'occupied' || !source.occupant) return;
+  if (target.status === 'reserved') { showToast('That seat is reserved.', 'error'); return; }
+
+  const sourceEmp = state.employees.find((e) => e.seat === sourceSeatId);
+
+  if (target.status === 'free') {
+    target.status = 'occupied';
+    target.occupant = { ...source.occupant };
+    source.status = 'free';
+    source.occupant = null;
+    if (sourceEmp) {
+      sourceEmp.seat = targetSeatId; sourceEmp.table = target.table; sourceEmp.wfh = false;
+      await updateEmployee(sourceEmp.id, { seat: targetSeatId, table: target.table, wfh: false });
+    }
+    await saveSeat(source);
+    await saveSeat(target);
+  } else {
+    // swap two occupied seats
+    const targetEmp = state.employees.find((e) => e.seat === targetSeatId);
+    const srcTable = source.table, tgtTable = target.table;
+    const tmp = { ...target.occupant };
+    target.occupant = { ...source.occupant };
+    source.occupant = tmp;
+    if (sourceEmp) { sourceEmp.seat = targetSeatId; sourceEmp.table = tgtTable; }
+    if (targetEmp) { targetEmp.seat = sourceSeatId; targetEmp.table = srcTable; }
+    await Promise.all([
+      saveSeat(source), saveSeat(target),
+      sourceEmp ? updateEmployee(sourceEmp.id, { seat: targetSeatId, table: tgtTable }) : Promise.resolve(),
+      targetEmp ? updateEmployee(targetEmp.id, { seat: sourceSeatId, table: srcTable }) : Promise.resolve(),
+    ]);
+  }
+
+  rebuildSeatMeta();
+  renderFloorMap();
+  renderDirectory();
+  renderAdminSeats();
+  renderAdminEmployees();
 }
 
 function renderTableVisual() {
@@ -1930,14 +1989,27 @@ function renderAdminSeatVisual() {
     el.addEventListener('click', (e) => { e.stopPropagation(); openAdminSeatPopover(el.dataset.seat, el); });
   });
 
-  // Drag a chair (occupied seat) onto a table card to relocate the person.
+  // Drag a chair (occupied seat) → drop on another chair (move/swap) or a table.
   container.querySelectorAll('.admin-chair[draggable="true"]').forEach((el) => {
     el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'seat', id: el.dataset.seat }));
       el.classList.add('dragging');
     });
     el.addEventListener('dragend', () => el.classList.remove('dragging'));
   });
+  // Every chair (free or occupied) is a precise drop target — any direction, either side.
+  container.querySelectorAll('.admin-chair').forEach((el) => {
+    el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move'; el.classList.add('drag-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      el.classList.remove('drag-over');
+      let data; try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch { return; }
+      if (data && data.type === 'seat') await adminMoveOrSwap(data.id, el.dataset.seat);
+    });
+  });
+  // Dropping on empty table space still relocates to the first free desk there.
   container.querySelectorAll('.admin-table-card').forEach((card) => {
     card.addEventListener('dragover', handleAdminTableDragOver);
     card.addEventListener('dragleave', handleAdminTableDragLeave);

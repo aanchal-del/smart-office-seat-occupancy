@@ -1888,3 +1888,10 @@ input:focus, select:focus {
   outline-offset: 4px;
   background: linear-gradient(180deg, #eff6ff 0%, #e0ecff 100%);
 }
+
+/* Highlight an individual chair as a drop target */
+.admin-chair.drag-over {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  transform: scale(1.06);
+}
