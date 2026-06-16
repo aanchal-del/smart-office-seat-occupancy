@@ -1305,6 +1305,72 @@ async function adminMoveOrSwap(sourceSeatId, targetSeatId) {
   renderAdminEmployees();
 }
 
+// Smooth pointer-based drag for admin chairs: a clone follows the cursor in real
+// time, targets highlight on hover, and it works in any direction (and on touch).
+let adminDragMoved = false;
+function setupAdminChairDrag(container) {
+  let drag = null;
+  const THRESHOLD = 4;
+
+  const onMove = (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+    if (!drag.started) {
+      if (Math.hypot(dx, dy) < THRESHOLD) return;
+      drag.started = true;
+      adminDragMoved = true;
+      drag.chair.classList.add('dragging');
+      const r = drag.chair.getBoundingClientRect();
+      drag.offX = e.clientX - r.left;
+      drag.offY = e.clientY - r.top;
+      const clone = drag.chair.cloneNode(true);
+      clone.classList.add('drag-clone');
+      clone.style.width = r.width + 'px';
+      clone.style.height = r.height + 'px';
+      document.body.appendChild(clone);
+      drag.clone = clone;
+    }
+    e.preventDefault();
+    drag.clone.style.left = (e.clientX - drag.offX) + 'px';
+    drag.clone.style.top = (e.clientY - drag.offY) + 'px';
+    drag.clone.style.display = 'none';
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    drag.clone.style.display = '';
+    const tgt = under && (under.closest('.admin-chair') || under.closest('.admin-table-card'));
+    if (drag.highlight && drag.highlight !== tgt) drag.highlight.classList.remove('drag-over');
+    if (tgt && tgt !== drag.chair) { tgt.classList.add('drag-over'); drag.highlight = tgt; }
+    else drag.highlight = null;
+  };
+
+  const onUp = async (e) => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    if (!d.started) return; // it was a click, not a drag
+    d.chair.classList.remove('dragging');
+    if (d.clone) d.clone.remove();
+    if (d.highlight) d.highlight.classList.remove('drag-over');
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const targetChair = under && under.closest('.admin-chair');
+    const targetCard = under && under.closest('.admin-table-card');
+    if (targetChair && targetChair !== d.chair) await adminMoveOrSwap(d.sourceId, targetChair.dataset.seat);
+    else if (targetCard) await moveSeatToTable(d.sourceId, targetCard.dataset.table);
+    setTimeout(() => { adminDragMoved = false; }, 60); // reset if no click follows
+  };
+
+  container.querySelectorAll('.admin-chair.occupied').forEach((chair) => {
+    chair.style.touchAction = 'none';
+    chair.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      drag = { chair, sourceId: chair.dataset.seat, startX: e.clientX, startY: e.clientY, started: false, clone: null, highlight: null };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  });
+}
+
 function renderTableVisual() {
   const mapContainer = document.getElementById('floor-map');
   mapContainer.innerHTML = '';
@@ -1967,8 +2033,7 @@ function renderAdminSeatVisual() {
       const num = s.label.replace('Desk ', '');
       const name = s.status === 'occupied' && s.occupant ? s.occupant.name
         : s.status === 'reserved' ? 'Reserved' : 'Free';
-      const drag = s.status === 'occupied' ? ' draggable="true"' : '';
-      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}"${drag} title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
+      return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
     };
     const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
     return `
@@ -1986,35 +2051,14 @@ function renderAdminSeatVisual() {
   }).join('') || '<p style="color:var(--muted);padding:20px;text-align:center;">No seats match the current filter.</p>';
 
   container.querySelectorAll('.admin-chair').forEach((el) => {
-    el.addEventListener('click', (e) => { e.stopPropagation(); openAdminSeatPopover(el.dataset.seat, el); });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (adminDragMoved) { adminDragMoved = false; return; } // this click ended a drag — ignore
+      openAdminSeatPopover(el.dataset.seat, el);
+    });
   });
 
-  // Drag a chair (occupied seat) → drop on another chair (move/swap) or a table.
-  container.querySelectorAll('.admin-chair[draggable="true"]').forEach((el) => {
-    el.addEventListener('dragstart', (e) => {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'seat', id: el.dataset.seat }));
-      el.classList.add('dragging');
-    });
-    el.addEventListener('dragend', () => el.classList.remove('dragging'));
-  });
-  // Every chair (free or occupied) is a precise drop target — any direction, either side.
-  container.querySelectorAll('.admin-chair').forEach((el) => {
-    el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move'; el.classList.add('drag-over'); });
-    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
-    el.addEventListener('drop', async (e) => {
-      e.preventDefault(); e.stopPropagation();
-      el.classList.remove('drag-over');
-      let data; try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch { return; }
-      if (data && data.type === 'seat') await adminMoveOrSwap(data.id, el.dataset.seat);
-    });
-  });
-  // Dropping on empty table space still relocates to the first free desk there.
-  container.querySelectorAll('.admin-table-card').forEach((card) => {
-    card.addEventListener('dragover', handleAdminTableDragOver);
-    card.addEventListener('dragleave', handleAdminTableDragLeave);
-    card.addEventListener('drop', handleAdminTableDrop);
-  });
+  setupAdminChairDrag(container);
 }
 
 // Floating popover to assign / release / recolor a seat from the visual layout.

@@ -1881,8 +1881,20 @@ input:focus, select:focus {
 .seat-rename-bar input { width: 150px; }
 
 /* ── Admin Seat Control: drag chair → drop on a table ─────────────────── */
-.admin-chair[draggable="true"] { cursor: grab; }
-.admin-chair.dragging { opacity: 0.45; transform: scale(0.92); }
+.admin-chair.occupied { cursor: grab; }
+.admin-chair.dragging { opacity: 0.4; }
+.admin-chair.drag-clone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  pointer-events: none;
+  z-index: 3000;
+  opacity: 0.95;
+  box-shadow: 0 14px 32px -8px rgba(15, 23, 42, 0.5);
+  transform: scale(1.06) rotate(-2deg);
+  transition: none;
+}
 .admin-table-card.drag-over {
   outline: 3px dashed var(--accent);
   outline-offset: 4px;
