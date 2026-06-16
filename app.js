@@ -1,10 +1,10 @@
 const officeInfo = {
   totalStaff: 72,
-  deskDemand: 56,
-  employeesNeedingDesk: 56,
+  deskDemand: 57,
+  employeesNeedingDesk: 57,
   internsNeedingDesk: 3,
   adminsNoDesk: 2,
-  totalSeats: 56,
+  totalSeats: 57,
 };
 
 const state = {
@@ -129,12 +129,13 @@ const defaultMeetingRooms = [
 // Each table has two rows ("sides"); each side belongs to a team. Seats are
 // numbered sequentially (Desk 1, Desk 2, …) following this order.
 const tableConfig = [
-  { table: 'Table 1', sides: [{ team: 'BKT', count: 5 },         { team: 'AMEX 1', count: 5 }] },
-  { table: 'Table 2', sides: [{ team: 'Art', count: 5 },         { team: 'Art', count: 5 }] },
-  { table: 'Table 3', sides: [{ team: 'Studio', count: 5 },      { team: 'Studio', count: 5 }] },
-  { table: 'Table 4', sides: [{ team: 'AMEX 2', count: 5 },      { team: 'EBCO', count: 5 }] },
-  { table: 'Table 5', sides: [{ team: 'UnderArmour', count: 5 }, { team: 'Nat GEO', count: 5 }] },
-  { table: 'Table 6', sides: [{ team: 'VYOMA', count: 5 },       { team: 'Finance/HR', count: 5 }] },
+  { table: 'Table 1', sides: [{ team: 'BKT', count: 4 },         { team: 'AMEX', count: 4 }] },
+  { table: 'Table 2', sides: [{ team: 'Art', count: 4 },         { team: 'Art', count: 4 }] },
+  { table: 'Table 3', sides: [{ team: 'Studio', count: 5 },      { team: 'Studio', count: 4 }] },
+  { table: 'Table 4', sides: [{ team: 'UnderArmour', count: 5 }, { team: 'Nat GEO', count: 5 }] },
+  { table: 'Table 5', sides: [{ team: 'AMEX 2', count: 4 },      { team: 'EBCO', count: 4 }] },
+  { table: 'Table 6', sides: [{ team: 'VYOMA', count: 4 },       { team: 'Finance/HR', count: 4 }] },
+  { table: 'Table 7', sides: [{ team: 'Table 7', count: 6 }] },
 ];
 
 // Derived: 'Desk N' -> { table, department, side: 'top'|'bottom', sideIndex }
@@ -259,6 +260,13 @@ async function saveSeat(seat) {
   if (!_supabase) return;
   const { error } = await _supabase.from('seats').update(seat).eq('id', seat.id);
   if (error) console.error('saveSeat failed:', error);
+}
+
+async function createSeat(seat) {
+  if (!_supabase) return seat;
+  const { data, error } = await _supabase.from('seats').insert(seat).select().single();
+  if (error) { console.error('createSeat failed:', error); return seat; }
+  return data;
 }
 
 async function addEmployee(employee) {
@@ -419,6 +427,9 @@ function bindUIActions() {
   document.getElementById('admin-login-btn').addEventListener('click', handleAdminLogin);
   document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
   document.getElementById('employee-form').addEventListener('submit', handleEmployeeAdd);
+  document.getElementById('employee-name').addEventListener('input', () => autofillDeptFromName('employee-name', 'employee-dept'));
+  const seatForm = document.getElementById('seat-form');
+  if (seatForm) seatForm.addEventListener('submit', handleSeatAdd);
   document.getElementById('floor-map').addEventListener('click', handleChairClick);
 
   // Admin seat view toggle: Visual layout ⇄ List
@@ -1514,6 +1525,90 @@ function populateAdminAddEmployeeFormOptions() {
       ${freeSeats.map(s => `<option value="${s.id}">${s.label} (${s.department})</option>`).join('')}
     `;
   }
+
+  renderEmployeeNameOptions();
+  populateAddSeatFormOptions();
+}
+
+// ── Name autocomplete ───────────────────────────────────────────────────────────
+// Known roster = everyone currently loaded (Supabase) merged with the offline
+// seed list, deduped by name. Powers the "type Sanjit → Sanjit Samant" suggestions.
+function buildNameRoster() {
+  const byName = new Map();
+  [...state.employees, ...mockEmployees].forEach((emp) => {
+    if (!emp || !emp.name) return;
+    const key = emp.name.trim().toLowerCase();
+    if (!byName.has(key)) byName.set(key, { name: emp.name.trim(), department: emp.department || '' });
+  });
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderEmployeeNameOptions() {
+  const datalist = document.getElementById('employee-name-options');
+  if (!datalist) return;
+  datalist.innerHTML = buildNameRoster()
+    .map((p) => `<option value="${p.name}">${p.department}</option>`)
+    .join('');
+}
+
+// When the typed name matches a known person, fill their department automatically.
+function autofillDeptFromName(nameInputId, deptInputId) {
+  const nameInput = document.getElementById(nameInputId);
+  const deptInput = document.getElementById(deptInputId);
+  if (!nameInput || !deptInput) return;
+  const typed = nameInput.value.trim().toLowerCase();
+  if (!typed) return;
+  const match = buildNameRoster().find((p) => p.name.toLowerCase() === typed);
+  if (!match || !match.department) return;
+  if (deptInput.tagName === 'SELECT') {
+    if (departmentOptions.includes(match.department)) deptInput.value = match.department;
+  } else {
+    deptInput.value = match.department;
+  }
+}
+
+// ── Add a new seat to the layout ─────────────────────────────────────────────────
+function getNextDeskLabel() {
+  const numbers = state.seats
+    .map((s) => parseInt(String(s.id).replace(/\D/g, ''), 10))
+    .filter((n) => !Number.isNaN(n));
+  const next = numbers.length ? Math.max(...numbers) + 1 : 1;
+  return `Desk ${next}`;
+}
+
+function populateAddSeatFormOptions() {
+  const tableSelect = document.getElementById('seat-table');
+  const teamSelect = document.getElementById('seat-team');
+  const labelInput = document.getElementById('seat-label');
+  if (tableSelect) tableSelect.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
+  if (teamSelect) teamSelect.innerHTML = departmentOptions.map((d) => `<option value="${d}">${d}</option>`).join('');
+  if (labelInput && !labelInput.value.trim()) labelInput.value = getNextDeskLabel();
+}
+
+async function handleSeatAdd(event) {
+  event.preventDefault();
+  const labelInput = document.getElementById('seat-label');
+  const tableInput = document.getElementById('seat-table');
+  const teamInput = document.getElementById('seat-team');
+  let label = labelInput.value.trim();
+  if (/^\d+$/.test(label)) label = `Desk ${label}`;
+  const table = tableInput.value;
+  const department = teamInput.value;
+  if (!label || !table || !department) {
+    alert('Enter a seat label and pick a table and team.');
+    return;
+  }
+  if (state.seats.find((s) => s.id.toLowerCase() === label.toLowerCase())) {
+    alert(`A seat called "${label}" already exists.`);
+    return;
+  }
+  const seat = { id: label, label, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
+  const saved = await createSeat(seat);
+  state.seats.push({ ...seat, ...saved });
+  labelInput.value = '';
+  populateAddSeatFormOptions();
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${label} added to ${table}`, 'success');
 }
 
 function renderAdminLoginState() {
@@ -1586,6 +1681,8 @@ function renderAdminSeats() {
     input.addEventListener('input', () => updateSeatColor(input.dataset.seat, input.value));
   });
 
+  populateAddSeatFormOptions();
+  renderEmployeeNameOptions();
   renderAdminSeatVisual();
 }
 
@@ -1671,7 +1768,7 @@ function openAdminSeatPopover(seatId, anchorEl) {
       </div>`;
   } else {
     body += `<div class="pop-assign">
-        <input type="text" id="pop-assign-name" placeholder="Name (optional)" />
+        <input type="text" id="pop-assign-name" placeholder="Name (optional)" list="employee-name-options" autocomplete="off" />
       </div>
       <div class="pop-actions">
         <button class="btn primary" data-act="assign">Assign here</button>

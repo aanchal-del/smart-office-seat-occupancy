@@ -228,6 +228,14 @@
                       <span class="seat-legend-hint">Click a seat to assign or release it</span>
                     </div>
 
+                    <form id="seat-form" class="seat-add-form">
+                      <span class="filter-label">Add a seat:</span>
+                      <input id="seat-label" type="text" placeholder="Desk 57" />
+                      <select id="seat-table"></select>
+                      <select id="seat-team"></select>
+                      <button type="submit" class="btn primary small">➕ Add Seat</button>
+                    </form>
+
                     <!-- Visual seat arrangement -->
                     <div id="admin-seat-visual" class="admin-seat-visual"></div>
 
@@ -280,7 +288,8 @@
                     <form id="employee-form" class="employee-form vertical">
                       <div class="form-group">
                         <label for="employee-name">Full Name</label>
-                        <input id="employee-name" type="text" placeholder="e.g. John Doe" required />
+                        <input id="employee-name" type="text" placeholder="Start typing, e.g. Sanjit" list="employee-name-options" autocomplete="off" required />
+                        <datalist id="employee-name-options"></datalist>
                       </div>
                       <div class="form-group">
                         <label for="employee-dept">Department</label>
