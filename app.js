@@ -497,6 +497,7 @@ const TABLE_LAYOUT = {
   'Table 4': { cx: 250,  topY: 560, bottomY: 660 },
   'Table 5': { cx: 650,  topY: 560, bottomY: 660 },
   'Table 6': { cx: 1050, topY: 560, bottomY: 660 },
+  'Table 7': { cx: 650,  topY: 740, bottomY: 800 },
 };
 const SEAT_GAP = 54;
 
@@ -669,7 +670,7 @@ function renderFloorMap() {
   const tablesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   tablesGroup.setAttribute('class', 'tables-group');
   
-  const tablesConfig = tableConfig.map((t) => {
+  const tablesConfig = tableConfig.filter((t) => TABLE_LAYOUT[t.table]).map((t) => {
     const L = TABLE_LAYOUT[t.table];
     const teams = [...new Set(t.sides.map((s) => s.team))];
     return {
