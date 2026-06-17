@@ -500,11 +500,14 @@ function bindUIActions() {
     renameTable(oldName, input.value);
     input.value = '';
   });
+  const renameTeamTable = document.getElementById('rename-team-table');
+  if (renameTeamTable) renameTeamTable.addEventListener('change', populateRenameTeamOptions);
   const renameTeamBtn = document.getElementById('rename-team-btn');
   if (renameTeamBtn) renameTeamBtn.addEventListener('click', () => {
+    const table = document.getElementById('rename-team-table').value;
     const oldName = document.getElementById('rename-team-select').value;
     const input = document.getElementById('rename-team-input');
-    renameTeam(oldName, input.value);
+    renameTeamInTable(table, oldName, input.value);
     input.value = '';
   });
   document.getElementById('floor-map').addEventListener('click', handleChairClick);
@@ -1305,6 +1308,32 @@ async function adminMoveOrSwap(sourceSeatId, targetSeatId) {
   renderAdminEmployees();
 }
 
+// Drop onto an empty slot of a given side: use a free seat already on that side,
+// otherwise add one desk there (kept within the 5-per-row / 10-per-table limit),
+// then move the dragged person into it.
+async function adminDropOnEmptySlot(sourceSeatId, table, side) {
+  const source = state.seats.find((s) => s.id === sourceSeatId);
+  if (!source || source.status !== 'occupied') return;
+  const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
+  let target = sideSeats.find((s) => s.status === 'free');
+  if (!target) {
+    if (state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) {
+      showToast('That row is full — drop on a person to swap instead.', 'error');
+      return;
+    }
+    const cfg = tableConfig.find((t) => t.table === table);
+    const teamForSide = (sideSeats[0] && sideSeats[0].department)
+      || (cfg && cfg.sides[side === 'top' ? 0 : 1] && cfg.sides[side === 'top' ? 0 : 1].team)
+      || source.department;
+    const id = getNextDeskLabel();
+    target = { id, label: id, floor: 'main-floor', status: 'free', occupant: null, department: teamForSide, table, color: null };
+    state.seats.push(target);
+    state.seats = sortSeats(state.seats);
+    await createSeat(target);
+  }
+  await adminMoveOrSwap(sourceSeatId, target.id);
+}
+
 // Smooth pointer-based drag for admin chairs: a clone follows the cursor in real
 // time, targets highlight on hover, and it works in any direction (and on touch).
 let adminDragMoved = false;
@@ -1355,8 +1384,12 @@ function setupAdminChairDrag(container) {
     const under = document.elementFromPoint(e.clientX, e.clientY);
     const targetChair = under && under.closest('.admin-chair');
     const targetCard = under && under.closest('.admin-table-card');
-    if (targetChair && targetChair !== d.chair) await adminMoveOrSwap(d.sourceId, targetChair.dataset.seat);
-    else if (targetCard) await moveSeatToTable(d.sourceId, targetCard.dataset.table);
+    if (targetChair && targetChair !== d.chair) {
+      if (targetChair.dataset.seat) await adminMoveOrSwap(d.sourceId, targetChair.dataset.seat);
+      else if (targetChair.dataset.table) await adminDropOnEmptySlot(d.sourceId, targetChair.dataset.table, targetChair.dataset.side);
+    } else if (targetCard) {
+      await moveSeatToTable(d.sourceId, targetCard.dataset.table);
+    }
     setTimeout(() => { adminDragMoved = false; }, 60); // reset if no click follows
   };
 
@@ -1849,9 +1882,26 @@ function populateAddSeatFormOptions() {
 // Populate the table/team dropdowns in the rename bar.
 function populateRenameOptions() {
   const tableSel = document.getElementById('rename-table-select');
-  const teamSel = document.getElementById('rename-team-select');
+  const teamTableSel = document.getElementById('rename-team-table');
   if (tableSel) tableSel.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
-  if (teamSel) teamSel.innerHTML = currentTeams().map((t) => `<option value="${t}">${t}</option>`).join('');
+  if (teamTableSel) {
+    const prev = teamTableSel.value;
+    teamTableSel.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
+    if (prev && seatTableGroups.includes(prev)) teamTableSel.value = prev;
+  }
+  populateRenameTeamOptions();
+}
+
+// Team dropdown lists only the teams present in the chosen table (so renames are scoped).
+function populateRenameTeamOptions() {
+  const teamTableSel = document.getElementById('rename-team-table');
+  const teamSel = document.getElementById('rename-team-select');
+  if (!teamSel) return;
+  const table = teamTableSel ? teamTableSel.value : '';
+  const teams = [...new Set(state.seats.filter((s) => s.table === table && s.department).map((s) => s.department))];
+  teamSel.innerHTML = teams.length
+    ? teams.map((t) => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">(no teams)</option>';
 }
 
 // Re-render every view after a structural change (rename, add, delete).
@@ -1879,20 +1929,20 @@ async function renameTable(oldName, newName) {
   showToast(`Table renamed to "${newName}"`, 'success');
 }
 
-// Rename a team/department everywhere (seats, occupants, employees), persisting.
-async function renameTeam(oldName, newName) {
+// Rename a team — scoped to ONE table only (other tables sharing the name are untouched).
+async function renameTeamInTable(table, oldName, newName) {
   newName = (newName || '').trim();
-  if (!newName || newName === oldName) return;
-  const seats = state.seats.filter((s) => s.department === oldName);
+  if (!table || !oldName || !newName || newName === oldName) return;
+  const seats = state.seats.filter((s) => s.table === table && s.department === oldName);
   for (const s of seats) {
     s.department = newName;
     if (s.occupant) s.occupant.department = newName;
     await saveSeat(s);
   }
-  const emps = state.employees.filter((e) => e.department === oldName);
+  const emps = state.employees.filter((e) => e.table === table && e.department === oldName);
   for (const e of emps) { e.department = newName; await updateEmployee(e.id, { department: newName }); }
   refreshAllViews();
-  showToast(`Team "${oldName}" renamed to "${newName}"`, 'success');
+  showToast(`"${oldName}" renamed to "${newName}" in ${table}`, 'success');
 }
 
 async function handleSeatAdd(event) {
@@ -2036,6 +2086,14 @@ function renderAdminSeatVisual() {
       return `<div class="admin-chair ${s.status}${out}" data-seat="${s.id}" title="${name} · ${s.label}"><span class="chair-num">${num}</span><span class="chair-name">${name}</span></div>`;
     };
     const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
+    // Pad each row up to 5 with empty drop-slots so people can be dropped into
+    // an open position (incl. the other side of the table).
+    const emptySlot = (side) => `<div class="admin-chair empty-slot" data-table="${tableName}" data-side="${side}" title="Empty — drop here"><span class="chair-num">+</span></div>`;
+    const renderRow = (rowSeats, side) => {
+      let html = rowSeats.map(chair).join('');
+      for (let i = rowSeats.length; i < SEATS_PER_ROW; i++) html += emptySlot(side);
+      return html;
+    };
     return `
       <div class="admin-table-card" data-table="${tableName}">
         <div class="table-visual-header">
@@ -2043,9 +2101,9 @@ function renderAdminSeatVisual() {
           <span class="table-count">${occupied}/${seats.length} occupied</span>
         </div>
         ${rowLabel(topTeam)}
-        <div class="chairs-row">${topSeats.map(chair).join('')}</div>
+        <div class="chairs-row">${renderRow(topSeats, 'top')}</div>
         <div class="table-plank"><span class="table-plank-text">${tableName}</span></div>
-        <div class="chairs-row">${bottomSeats.map(chair).join('')}</div>
+        <div class="chairs-row">${renderRow(bottomSeats, 'bottom')}</div>
         ${sameTeam ? '' : rowLabel(bottomTeam)}
       </div>`;
   }).join('') || '<p style="color:var(--muted);padding:20px;text-align:center;">No seats match the current filter.</p>';
@@ -2054,6 +2112,7 @@ function renderAdminSeatVisual() {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       if (adminDragMoved) { adminDragMoved = false; return; } // this click ended a drag — ignore
+      if (!el.dataset.seat) return; // empty slot — nothing to open
       openAdminSeatPopover(el.dataset.seat, el);
     });
   });
