@@ -2757,6 +2757,7 @@ function renderAdminEmployees() {
 function startAutoRefresh() {
   if (state.refreshIntervalId) clearInterval(state.refreshIntervalId);
   state.refreshIntervalId = setInterval(async () => {
+    if (mapDrag && mapDrag.started) return; // don't redraw the map under a drag
     await loadFromServer();
     await checkExpiredVisitors();
     await checkExpiredRooms();

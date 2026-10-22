@@ -801,11 +801,12 @@ tbody tr:last-child td {
 }
 
 .seat-node {
-  transition: transform 0.2s ease;
+  transition: none;
 }
-.seat-node:hover {
-  transform: scale(1.08);
+.seat-node:hover circle {
+  stroke-width: 3px;
 }
+.seat-node, .map-empty-slot { -webkit-tap-highlight-color: transparent; }
 
 /* Search Highlights */
 .search-match {
