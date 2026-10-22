@@ -254,9 +254,61 @@ function getTeamOptions() {
   return [...set];
 }
 
+// ── In-page dialogs ──────────────────────────────────────────────────────────
+// window.confirm / prompt / alert are silently blocked in some embedded browsers
+// (e.g. VS Code's Simple Browser), which made buttons "do nothing". These always work.
+function uiDialog({ message, withInput = false, defaultValue = '', okLabel = 'OK', cancelLabel = 'Cancel' }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;color:#0f172a;border-radius:14px;padding:20px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);font:14px system-ui,sans-serif;';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'white-space:pre-line;margin-bottom:12px;line-height:1.4;';
+    msg.textContent = message;
+    box.appendChild(msg);
+    let input = null;
+    if (withInput) {
+      input = document.createElement('input');
+      input.type = 'text';
+      input.value = defaultValue;
+      input.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin-bottom:12px;';
+      box.appendChild(input);
+    }
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+    const mk = (label, primary) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.style.cssText = `padding:7px 14px;border-radius:8px;border:1px solid ${primary ? '#4f46e5' : '#cbd5e1'};background:${primary ? '#4f46e5' : '#fff'};color:${primary ? '#fff' : '#0f172a'};cursor:pointer;font-size:14px;`;
+      return b;
+    };
+    const cancel = mk(cancelLabel, false);
+    const ok = mk(okLabel, true);
+    row.appendChild(cancel); row.appendChild(ok);
+    box.appendChild(row);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    const done = (value) => { overlay.remove(); resolve(value); };
+    ok.addEventListener('click', () => done(withInput ? input.value : true));
+    cancel.addEventListener('click', () => done(withInput ? null : false));
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) done(withInput ? null : false); });
+    const openedAt = Date.now();
+    overlay.addEventListener('keydown', (e) => {
+      if (Date.now() - openedAt < 300) { e.preventDefault(); return; } // the Enter that opened this dialog
+      if (e.key === 'Escape') done(withInput ? null : false);
+      if (e.key === 'Enter') { e.preventDefault(); done(withInput ? input.value : true); }
+    });
+    setTimeout(() => { (input || ok).focus(); if (input) input.select(); }, 60);
+  });
+}
+const uiConfirm = (message, okLabel = 'OK') => uiDialog({ message, okLabel });
+const uiPrompt = (message, defaultValue = '') => uiDialog({ message, withInput: true, defaultValue });
+
 // Ask for a new team name; returns the (existing or new) team, or null.
-function promptNewTeam() {
-  const name = (prompt('New team name:') || '').trim().replace(/\s+/g, ' ');
+async function promptNewTeam() {
+  const name = ((await uiPrompt('New team name:')) || '').trim().replace(/\s+/g, ' ');
   if (!name) return null;
   const existing = getTeamOptions().find((t) => t.toLowerCase() === name.toLowerCase());
   if (existing) return existing;
@@ -266,7 +318,7 @@ function promptNewTeam() {
 
 // Team <select> change handler shared by Manage Employees and the roster.
 async function changePersonTeam(employeeId, value) {
-  const team = value === '__new__' ? promptNewTeam() : value;
+  const team = value === '__new__' ? await promptNewTeam() : value;
   if (team) await updateEmployeeDepartment(employeeId, team);
   else { renderAdminEmployees(); renderTeamRoster(); } // cancelled — reset the dropdown
 }
@@ -419,7 +471,7 @@ async function initApp() {
 }
 
 // Tiny corner label so it is obvious which copy of the app a browser is running.
-const APP_BUILD = '2026-10-22 · assign v4';
+const APP_BUILD = '2026-10-22 · assign v5';
 function showBuildStamp() {
   const el = document.createElement('div');
   el.textContent = `Build ${APP_BUILD}`;
@@ -1337,12 +1389,13 @@ async function assignSeatFromPopup(seatId) {
   const raw = input ? input.value.trim().replace(/\s+/g, ' ') : '';
   if (!raw) { showToast('Type a name first.', 'error'); return; }
   const seat = state.seats.find(s => s.id === seatId);
-  if (!seat || seat.status !== 'free') return;
+  if (!seat) return;
+  if (seat.status !== 'free') { showToast(`${seat.label} is no longer free.`, 'error'); return; }
 
   let emp = findEmployeeByTypedName(raw);
   if (!emp) {
     // not in the list: add them as a new person at this desk
-    if (!confirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`)) return;
+    if (!(await uiConfirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`, 'Add person'))) return;
     const saved = await addEmployee({
       name: raw, department: seat.department, seat: null, table: seat.table,
       checkIn: getCurrentTime(), wfh: false,
@@ -1917,7 +1970,7 @@ async function handleDirectoryAdd(event) {
   const seatId = seatSelect.value;
   const seatRecord = state.seats.find((item) => item.id === seatId);
   if (!name || !department || !seatRecord || seatRecord.status !== 'free') {
-    alert('Please choose a valid free desk and enter name plus department.');
+    showToast('Please choose a valid free desk and enter name plus department.', 'error');
     return;
   }
   seatRecord.status = 'occupied';
@@ -1967,7 +2020,7 @@ async function handleEmployeeAdd(event) {
   const seatId = seatSelect.value; // Empty string if WFH
   
   if (!name || !department) {
-    alert('Please enter name and department.');
+    showToast('Please enter name and department.', 'error');
     return;
   }
   
@@ -1975,11 +2028,11 @@ async function handleEmployeeAdd(event) {
   if (seatId) {
     seatRecord = state.seats.find((item) => item.id === seatId);
     if (!seatRecord) {
-      alert('Selected desk not found.');
+      showToast('Selected desk not found.', 'error');
       return;
     }
     if (seatRecord.status !== 'free') {
-      alert('That desk is no longer available. Please select another.');
+      showToast('That desk is no longer available. Please select another.', 'error');
       return;
     }
   }
@@ -2021,7 +2074,7 @@ async function handleEmployeeAdd(event) {
 async function removeEmployee(employeeId) {
   const employee = state.employees.find((item) => item.id === employeeId);
   if (!employee) return;
-  if (!confirm(`Remove ${employee.name} from the workspace?\nTheir desk will be freed.`)) return;
+  if (!(await uiConfirm(`Remove ${employee.name} from the workspace?\nTheir desk will be freed.`, 'Remove'))) return;
   const seat = state.seats.find((item) => item.id === employee.seat);
   if (seat) { seat.status = 'free'; seat.occupant = null; await saveSeat(seat); }
   const result = await deleteEmployee(employeeId);
@@ -2287,7 +2340,7 @@ async function moveTableToPosition(table, position) {
 async function renameTable(oldName, newName) {
   newName = (newName || '').trim();
   if (!newName || newName === oldName) return;
-  if (seatTableGroups.includes(newName)) { alert(`A table named "${newName}" already exists.`); return; }
+  if (seatTableGroups.includes(newName)) { showToast(`A table named "${newName}" already exists.`, 'error'); return; }
   const seats = state.seats.filter((s) => s.table === oldName);
   for (const s of seats) { s.table = newName; await saveSeat(s); }
   const emps = state.employees.filter((e) => e.table === oldName);
@@ -2322,16 +2375,16 @@ async function handleSeatAdd(event) {
   const table = tableInput.value;
   const department = teamInput.value;
   if (!label || !table || !department) {
-    alert('Enter a seat label and pick a table and team.');
+    showToast('Enter a seat label and pick a table and team.', 'error');
     return;
   }
   if (state.seats.find((s) => s.id.toLowerCase() === label.toLowerCase())) {
-    alert(`A seat called "${label}" already exists.`);
+    showToast(`A seat called "${label}" already exists.`, 'error');
     return;
   }
   const tableCount = state.seats.filter((s) => s.table === table).length;
   if (tableCount >= SEATS_PER_ROW * 2) {
-    alert(`${table} is full — max ${SEATS_PER_ROW * 2} desks (${SEATS_PER_ROW} per row).`);
+    showToast(`${table} is full — max ${SEATS_PER_ROW * 2} desks (${SEATS_PER_ROW} per row).`, 'error');
     return;
   }
   const seat = { id: label, label, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
@@ -2391,7 +2444,7 @@ async function rosterAddPerson(team, rawName) {
 async function rosterRenamePerson(employeeId) {
   const emp = state.employees.find((e) => e.id === employeeId);
   if (!emp) return;
-  const input = prompt('Rename person:', emp.name);
+  const input = await uiPrompt('Rename person:', emp.name);
   if (input === null) return;
   const name = input.trim().replace(/\s+/g, ' ');
   if (!name || name === emp.name) return;
@@ -2698,7 +2751,7 @@ function openAdminSeatPopover(seatId, anchorEl) {
 async function deleteSeat(seatId) {
   const seat = state.seats.find((s) => s.id === seatId);
   if (!seat) return;
-  if (!confirm(`Delete ${seat.label} from the layout?\nThis removes the seat entirely.`)) return;
+  if (!(await uiConfirm(`Delete ${seat.label} from the layout?\nThis removes the seat entirely.`, 'Delete'))) return;
   const emp = state.employees.find((e) => e.seat === seatId);
   if (emp) {
     emp.seat = null; emp.table = 'No desk'; emp.wfh = true;
@@ -2871,7 +2924,7 @@ function getCurrentTime() {
 async function bookVisitorSeat(seatId) {
   const name = document.getElementById('popup-visitor-name')?.value.trim();
   const duration = parseInt(document.getElementById('popup-visitor-dur')?.value || '60');
-  if (!name) { alert('Please enter visitor name.'); return; }
+  if (!name) { showToast('Please enter visitor name.', 'error'); return; }
   const seat = state.seats.find(s => s.id === seatId);
   if (!seat || seat.status !== 'free') return;
   const expiresAt = new Date(Date.now() + duration * 60 * 1000).toISOString();
@@ -2898,12 +2951,12 @@ async function checkExpiredVisitors() {
 
 // ── Daily reset ───────────────────────────────────────────────────────────────
 async function dailyReset() {
-  if (!confirm('Reset all check-in times for tomorrow? Seat assignments and WFH status are kept.')) return;
+  if (!(await uiConfirm('Reset all check-in times for tomorrow? Seat assignments and WFH status are kept.', 'Reset'))) return;
   state.employees.forEach(emp => { emp.checkIn = '—'; });
   await Promise.all(state.employees.map(emp => updateEmployee(emp.id, { checkIn: '—' })));
   renderDirectory();
   renderAdminEmployees();
-  alert('Done — all check-in times cleared.');
+  showToast('Done — all check-in times cleared.', 'success');
 }
 window.dailyReset = dailyReset;
 
@@ -2945,7 +2998,7 @@ async function bookRoom(roomId) {
   const durSelect = document.getElementById(`rb-dur-${roomId}`);
   const name = nameInput?.value.trim();
   const duration = parseInt(durSelect?.value || '60');
-  if (!name) { alert('Please enter who is booking.'); return; }
+  if (!name) { showToast('Please enter who is booking.', 'error'); return; }
   const room = state.meetingRooms.find(r => r.id === roomId);
   if (!room) return;
   room.status = 'booked';
