@@ -1312,7 +1312,7 @@ async function assignSeatFromPopup(seatId) {
   // if they already sit somewhere, free that desk first (they are moving)
   const oldSeat = state.seats.find(s => s.status === 'occupied' && s.occupant
     && s.occupant.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
-  if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; await saveSeat(oldSeat); }
+  if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; }
 
   seat.status = 'occupied';
   seat.occupant = { name: emp.name, department: emp.department };
@@ -1320,9 +1320,7 @@ async function assignSeatFromPopup(seatId) {
   emp.table = seat.table;
   emp.wfh = false;
 
-  await updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh });
-  await saveSeat(seat);
-
+  // show the change straight away; the database saves happen in the background
   document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
   renderFloorMap();
   renderDirectory();
@@ -1331,6 +1329,13 @@ async function assignSeatFromPopup(seatId) {
     renderAdminEmployees();
   }
   showToast(`${emp.name} assigned to ${seat.label}`, 'success');
+
+  const results = await Promise.all([
+    oldSeat ? saveSeat(oldSeat) : Promise.resolve(),
+    updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh }),
+    saveSeat(seat),
+  ]);
+  if (results.some((r) => r && r.ok === false)) showToast('Saved on screen, but the database rejected the change.', 'error');
 }
 window.assignSeatFromPopup = assignSeatFromPopup;
 
