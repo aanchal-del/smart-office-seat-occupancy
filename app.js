@@ -1281,44 +1281,30 @@ function pickAssignPerson(index) {
 window.filterAssignPeople = filterAssignPeople;
 window.pickAssignPerson = pickAssignPerson;
 
-async function assignSeatFromPopup(seatId) {
-  const input = document.getElementById('popup-assign-select');
-  const raw = input ? input.value.trim().replace(/\s+/g, ' ') : '';
-  const typed = raw.toLowerCase();
-  if (!typed) { showToast('Type a name first.', 'error'); return; }
-  const seat = state.seats.find(s => s.id === seatId);
-  if (!seat || seat.status !== 'free') return;
+// Match typed text to an existing person: exact name, or a single partial match
+// ("prabhan" -> Prabhanjan Kasar). Returns null when nothing / several match.
+function findEmployeeByTypedName(raw) {
+  const typed = (raw || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  if (!typed) return null;
+  const exact = state.employees.find((e) => e.name.trim().toLowerCase() === typed);
+  if (exact) return exact;
+  const hits = state.employees.filter((e) => e.name.toLowerCase().includes(typed));
+  return hits.length === 1 ? hits[0] : null;
+}
 
-  let emp = state.employees.find(e => e.name.trim().toLowerCase() === typed)
-    || (() => { // a unique partial match also works ("sanj" -> Sanjit Samant)
-      const hits = state.employees.filter(e => e.name.toLowerCase().includes(typed));
-      return hits.length === 1 ? hits[0] : null;
-    })();
-
-  if (!emp) {
-    // not in the list: add them as a new person at this desk
-    if (!confirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`)) return;
-    const saved = await addEmployee({
-      name: raw, department: seat.department, seat: null, table: seat.table,
-      checkIn: getCurrentTime(), wfh: false,
-    });
-    if (!saved || !saved.id) { showToast('Could not save — the database rejected the insert.', 'error'); return; }
-    emp = { ...saved };
-    state.employees.push(emp);
-  }
-
-  // if they already sit somewhere, free that desk first (they are moving)
-  const oldSeat = state.seats.find(s => s.status === 'occupied' && s.occupant
+// Put a person on a free desk (freeing any desk they already had). The screen
+// updates immediately; the database saves happen in the background.
+async function placeEmployeeOnSeat(emp, seat) {
+  const oldSeat = state.seats.find((s) => s.status === 'occupied' && s.occupant
     && s.occupant.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
   if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; }
 
   seat.status = 'occupied';
   seat.occupant = { name: emp.name, department: emp.department };
-  emp.seat = seatId;
+  emp.seat = seat.id;
   emp.table = seat.table;
   emp.wfh = false;
 
-  // show the change straight away; the database saves happen in the background
   document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
   renderFloorMap();
   renderDirectory();
@@ -1334,6 +1320,28 @@ async function assignSeatFromPopup(seatId) {
     saveSeat(seat),
   ]);
   if (results.some((r) => r && r.ok === false)) showToast('Saved on screen, but the database rejected the change.', 'error');
+}
+
+async function assignSeatFromPopup(seatId) {
+  const input = document.getElementById('popup-assign-select');
+  const raw = input ? input.value.trim().replace(/\s+/g, ' ') : '';
+  if (!raw) { showToast('Type a name first.', 'error'); return; }
+  const seat = state.seats.find(s => s.id === seatId);
+  if (!seat || seat.status !== 'free') return;
+
+  let emp = findEmployeeByTypedName(raw);
+  if (!emp) {
+    // not in the list: add them as a new person at this desk
+    if (!confirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`)) return;
+    const saved = await addEmployee({
+      name: raw, department: seat.department, seat: null, table: seat.table,
+      checkIn: getCurrentTime(), wfh: false,
+    });
+    if (!saved || !saved.id) { showToast('Could not save — the database rejected the insert.', 'error'); return; }
+    emp = { ...saved };
+    state.employees.push(emp);
+  }
+  await placeEmployeeOnSeat(emp, seat);
 }
 window.assignSeatFromPopup = assignSeatFromPopup;
 
@@ -2713,13 +2721,21 @@ function closeAdminSeatPopover() {
 async function adminAssignSeat(seatId, name) {
   const seat = state.seats.find((s) => s.id === seatId);
   if (!seat || seat.status === 'occupied') return;
+  const raw = (name || '').trim().replace(/\s+/g, ' ') || 'Guest User';
+
+  // an existing person (exact or single partial match) is moved here — never duplicated
+  const existing = raw === 'Guest User' ? null : findEmployeeByTypedName(raw);
+  if (existing) { await placeEmployeeOnSeat(existing, seat); return; }
+
+  // otherwise add a new person at this desk
+  const saved = await addEmployee({ name: raw, department: seat.department, seat: seatId, table: seat.table, checkIn: getCurrentTime(), wfh: false });
+  if (!saved || !saved.id) { showToast('Could not save — the database rejected the insert.', 'error'); return; }
   seat.status = 'occupied';
-  seat.occupant = { name, department: seat.department };
-  const saved = await addEmployee({ name, department: seat.department, seat: seatId, table: seat.table, checkIn: getCurrentTime(), wfh: false });
+  seat.occupant = { name: raw, department: seat.department };
   state.employees.push({ ...saved });
   await saveSeat(seat);
   renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
-  showToast(`${name} assigned to ${seat.label}`, 'success');
+  showToast(`${raw} assigned to ${seat.label}`, 'success');
 }
 
 function getStatusColor(status) {
