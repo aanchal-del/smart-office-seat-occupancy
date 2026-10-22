@@ -210,6 +210,15 @@ function recomputeTableGroups() {
     minDesk[s.table] = (s.table in minDesk) ? Math.min(minDesk[s.table], n) : n;
   });
   const tables = Object.keys(minDesk).sort((a, b) => minDesk[a] - minDesk[b]);
+  // Tables named "Table N" follow their number (Table 1, 2, 3 …) so swapping two
+  // table numbers swaps their place on the floor. Differently named tables keep
+  // the position they already had (by lowest desk number).
+  const tableNum = (t) => { const m = /^\s*table\s*0*(\d+)\s*$/i.exec(t); return m ? parseInt(m[1], 10) : null; };
+  const slots = [];
+  const numbered = [];
+  tables.forEach((t, i) => { if (tableNum(t) !== null) { slots.push(i); numbered.push(t); } });
+  numbered.sort((a, b) => tableNum(a) - tableNum(b));
+  slots.forEach((slot, k) => { tables[slot] = numbered[k]; });
   if (tables.length) seatTableGroups = tables;
 }
 
