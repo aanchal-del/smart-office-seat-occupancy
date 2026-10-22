@@ -136,6 +136,7 @@ const tableConfig = [
   { table: 'Table 5', sides: [{ team: 'AMEX 2', count: 4 },      { team: 'EBCO', count: 4 }] },
   { table: 'Table 6', sides: [{ team: 'VYOMA', count: 4 },       { team: 'Finance/HR', count: 4 }] },
   { table: 'Table 7', sides: [{ team: 'Table 7', count: 6 }] },
+  { table: 'Table 8', sides: [{ team: 'Table 8', count: 5 }] },
 ];
 
 // Derived: 'Desk N' -> { table, department, side: 'top'|'bottom', sideIndex }
@@ -585,6 +586,7 @@ const TABLE_POSITIONS = [
   { cx: 780,  topY: 960,  bottomY: 1060 },  // index 4 → Table 5  (beside Table 3)
   { cx: 1260, topY: 960,  bottomY: 1060 },  // index 5 → Table 6  (beside Table 5)
   { cx: 780,  topY: 130,  bottomY: 230 },   // index 6 → Production (top, centred)
+  { cx: 780,  topY: 400,  bottomY: 500 },   // index 7 → Table 8  (beside Table 1 / AMEX)
 ];
 const SEAT_GAP = 92;
 
