@@ -182,7 +182,13 @@ function rebuildSeatMeta() {
 
   Object.entries(byTable).forEach(([table, seats]) => {
     seats.sort((a, b) => deskNum(a.id) - deskNum(b.id));
-    const teams = sideTeams[table] || { top: seats[0]?.department, bottom: seats[0]?.department };
+    const depts = [...new Set(seats.map((s) => s.department))];
+    let teams = sideTeams[table];
+    // A moved/renamed table keeps its own teams: if the configured teams for this
+    // name aren't in it, take the first two teams actually seated here.
+    if (!teams || (!depts.includes(teams.top) && !depts.includes(teams.bottom))) {
+      teams = { top: depts[0], bottom: depts[1] || depts[0] };
+    }
     let top = 0, bottom = 0;
     seats.forEach((s) => {
       let side;
@@ -537,6 +543,11 @@ function bindUIActions() {
     renameTable(oldName, input.value);
     input.value = '';
   });
+  const moveTableBtn = document.getElementById('move-table-btn');
+  if (moveTableBtn) moveTableBtn.addEventListener('click', () => {
+    moveTableToPosition(document.getElementById('move-table-select').value,
+                        document.getElementById('move-table-position').value);
+  });
   const renameTeamTable = document.getElementById('rename-team-table');
   if (renameTeamTable) renameTeamTable.addEventListener('change', populateRenameTeamOptions);
   const renameTeamBtn = document.getElementById('rename-team-btn');
@@ -629,7 +640,20 @@ const SEAT_GAP = 92;
 // Position for a table by its current order in seatTableGroups.
 function tableLayout(tableName) {
   const i = seatTableGroups.indexOf(tableName);
-  return i >= 0 ? TABLE_POSITIONS[i] : undefined;
+  if (i < 0) return undefined;
+  if (i < TABLE_POSITIONS.length) return TABLE_POSITIONS[i];
+  // More tables than the sketch has slots for: keep adding rows of three below it
+  // so every table is on the map.
+  const k = i - TABLE_POSITIONS.length;
+  const topY = 1240 + Math.floor(k / 3) * 280;
+  return { cx: [300, 780, 1260][k % 3], topY, bottomY: topY + 100 };
+}
+
+// Canvas height: the sketch's height, or taller if extra tables were added.
+function getViewHeight() {
+  let h = VIEW_H;
+  seatTableGroups.forEach((t) => { const L = tableLayout(t); if (L) h = Math.max(h, L.bottomY + 100); });
+  return h;
 }
 
 function getSeatCoordinates(seatId) {
@@ -695,13 +719,14 @@ function renderFloorMap() {
   const mapContainer = document.getElementById('floor-map');
   mapContainer.innerHTML = '';
   mapContainer.className = 'floor-map svg-mode';
+  const viewH = getViewHeight();
   mapContainer.style.overflow = 'hidden';
   mapContainer.style.position = 'relative';
 
   // Create SVG element
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
-  svg.setAttribute('viewBox', `0 0 ${VIEW_W} ${VIEW_H}`);
+  svg.setAttribute('viewBox', `0 0 ${VIEW_W} ${viewH}`);
   svg.style.cursor = state.isDraggingMap ? 'grabbing' : 'grab';
   svg.style.userSelect = 'none';
 
@@ -740,7 +765,7 @@ function renderFloorMap() {
   gridGroup.setAttribute('class', 'room-grid');
 
   if (state.showActualLayout) {
-    for (let y = 50; y <= VIEW_H - 50; y += 160) {
+    for (let y = 50; y <= viewH - 50; y += 160) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', '50');
       line.setAttribute('y1', y.toString());
@@ -756,7 +781,7 @@ function renderFloorMap() {
       line.setAttribute('x1', x.toString());
       line.setAttribute('y1', '50');
       line.setAttribute('x2', x.toString());
-      line.setAttribute('y2', (VIEW_H - 50).toString());
+      line.setAttribute('y2', (viewH - 50).toString());
       line.setAttribute('stroke', '#cbd5e1');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '4,4');
@@ -770,7 +795,7 @@ function renderFloorMap() {
   outerWall.setAttribute('x', '50');
   outerWall.setAttribute('y', '50');
   outerWall.setAttribute('width', (VIEW_W - 100).toString());
-  outerWall.setAttribute('height', (VIEW_H - 100).toString());
+  outerWall.setAttribute('height', (viewH - 100).toString());
   outerWall.setAttribute('fill', 'none');
   outerWall.setAttribute('stroke', '#475569');
   outerWall.setAttribute('stroke-width', '4');
@@ -804,6 +829,8 @@ function renderFloorMap() {
     tableRect.setAttribute('stroke-width', '1.5');
     tableRect.setAttribute('rx', '4');
     tableRect.setAttribute('filter', 'url(#shadow)');
+    tableRect.setAttribute('class', 'map-table-drop');
+    tableRect.setAttribute('data-table', table.id);
     tablesGroup.appendChild(tableRect);
 
     const tableText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -814,6 +841,7 @@ function renderFloorMap() {
     tableText.setAttribute('font-size', '14');
     tableText.setAttribute('font-weight', 'bold');
     tableText.setAttribute('filter', 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))');
+    tableText.style.pointerEvents = 'none';
     tableText.textContent = `${table.id} (${table.dept})`;
     tablesGroup.appendChild(tableText);
   });
@@ -852,17 +880,16 @@ function renderFloorMap() {
     seatNode.setAttribute('class', `seat-node ${seat.status}${filteredOut ? ' filtered-out' : ''}${matchesSearch ? ' search-match' : ''}`);
     seatNode.setAttribute('data-seat-id', seat.id);
     seatNode.setAttribute('filter', 'url(#seatShadow)');
-    seatNode.style.cursor = seat.status === 'occupied' ? 'grab' : 'pointer';
+    seatNode.style.cursor = 'grab';
 
     seatNode.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (mapDragMoved) { mapDragMoved = false; return; } // this click ended a drag
       handleSeatClick(seat.id);
     });
 
-    if (seat.status === 'occupied') {
-      seatNode.setAttribute('draggable', 'true');
-      seatNode.addEventListener('dragstart', (e) => handleSeatDragStart(e, seat.id));
-    }
+    seatNode.style.touchAction = 'none';
+    seatNode.addEventListener('pointerdown', (e) => startMapSeatDrag(e, seat));
 
     seatNode.addEventListener('dragover', (e) => handleSeatDragOver(e, seat.id));
     seatNode.addEventListener('dragleave', (e) => handleSeatDragLeave(e, seat.id));
@@ -956,6 +983,39 @@ function renderFloorMap() {
 
     desksGroup.appendChild(seatNode);
   });
+
+  // Empty "+" positions in each row: click to add a desk, or drop a person here.
+  // A row only offers them once it has a desk (or the other row is full), so a new
+  // desk always lands on the row you clicked.
+  seatTableGroups.forEach((tableName) => {
+    const L = tableLayout(tableName);
+    const seats = state.seats.filter((s) => s.table === tableName && !String(s.id).startsWith('Cabin'));
+    if (!L || !seats.length) return;
+    const count = { top: 0, bottom: 0 };
+    seats.forEach((s) => { count[getSeatSide(s)]++; });
+    ['top', 'bottom'].forEach((side) => {
+      const other = side === 'top' ? 'bottom' : 'top';
+      if (count[side] === 0 && count[other] < SEATS_PER_ROW) return;
+      for (let k = count[side]; k < SEATS_PER_ROW; k++) {
+        const x = L.cx - 2 * SEAT_GAP + k * SEAT_GAP;
+        const y = side === 'top' ? L.topY : L.bottomY;
+        const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        slot.setAttribute('class', 'map-empty-slot');
+        slot.setAttribute('data-table', tableName);
+        slot.setAttribute('data-side', side);
+        slot.style.cursor = 'pointer';
+        slot.innerHTML = `<title>Empty — click to add a desk, or drop a person here</title>
+          <circle cx="${x}" cy="${y}" r="11" fill="rgba(255,255,255,0.01)" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3"></circle>
+          <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="16" fill="#94a3b8" style="pointer-events:none">+</text>`;
+        slot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (mapDragMoved) { mapDragMoved = false; return; }
+          adminAddDeskToSlot(tableName, side);
+        });
+        desksGroup.appendChild(slot);
+      }
+    });
+  });
   viewport.appendChild(desksGroup);
 
   mapContainer.appendChild(svg);
@@ -963,7 +1023,7 @@ function renderFloorMap() {
   // Dragging event listeners on SVG container to Pan the map
   svg.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
-    if (e.target.closest('.seat-node') || e.target.closest('.cabin-box')) return;
+    if (e.target.closest('.seat-node') || e.target.closest('.map-empty-slot') || e.target.closest('.cabin-box')) return;
     
     state.isDraggingMap = true;
     svg.style.cursor = 'grabbing';
@@ -985,6 +1045,107 @@ function renderFloorMap() {
   });
 
   renderSummary();
+}
+
+// Move a desk itself (with whoever sits on it) to another table / row.
+async function moveDeskToSlot(seatId, table, side) {
+  const seat = state.seats.find((s) => s.id === seatId);
+  if (!seat) return;
+  if (seat.table === table && getSeatSide(seat) === side) return; // already there
+  const others = state.seats.filter((s) => s.table === table && s.id !== seatId);
+  if (others.length >= SEATS_PER_ROW * 2) { showToast(`${table} is full (max ${SEATS_PER_ROW * 2} desks).`, 'error'); return; }
+  const sideSeats = others.filter((s) => getSeatSide(s) === side);
+  if (sideSeats.length >= SEATS_PER_ROW) { showToast('That row is full.', 'error'); return; }
+
+  // the desk takes the team of the row it joins
+  const counts = {};
+  sideSeats.forEach((s) => { counts[s.department] = (counts[s.department] || 0) + 1; });
+  const cfg = tableConfig.find((t) => t.table === table);
+  const cfgSide = cfg && cfg.sides[side === 'top' ? 0 : 1];
+  const rowTeam = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0]
+    || (cfgSide && cfgSide.team)
+    || (others[0] && others[0].department)
+    || seat.department;
+
+  const oldTable = seat.table;
+  seat.table = table;
+  seat.department = rowTeam;
+  const emp = seat.status === 'occupied' ? state.employees.find((e) => e.seat === seat.id) : null;
+  if (emp) emp.table = table;
+  await Promise.all([saveSeat(seat), emp ? updateEmployee(emp.id, { table }) : Promise.resolve()]);
+  refreshAllViews();
+  showToast(`${seat.label} moved ${oldTable === table ? 'to the other row of' : 'to'} ${table}`, 'success');
+}
+
+// ── Drag a person on the floor map ────────────────────────────────────────────
+// Pointer-based (HTML5 drag does not work reliably on SVG). Any desk can be dragged:
+//  - onto another occupied/free desk: the person moves or the two people swap
+//    (a free desk dropped on a desk joins that desk's row)
+//  - onto a "+" slot or a table: the desk itself moves there, with its person.
+let mapDrag = null;
+let mapDragMoved = false;
+
+function startMapSeatDrag(e, seat) {
+  if (e.button !== 0) return;
+  mapDrag = { sourceId: seat.id, name: seat.occupant ? seat.occupant.name : seat.label,
+              startX: e.clientX, startY: e.clientY, started: false, clone: null, highlight: null };
+  window.addEventListener('pointermove', onMapSeatDragMove);
+  window.addEventListener('pointerup', onMapSeatDragEnd);
+}
+
+function mapDragTarget(x, y) {
+  const under = document.elementFromPoint(x, y);
+  return under && (under.closest('.seat-node') || under.closest('.map-empty-slot') || under.closest('.map-table-drop'));
+}
+
+function onMapSeatDragMove(e) {
+  if (!mapDrag) return;
+  if (!mapDrag.started) {
+    if (Math.hypot(e.clientX - mapDrag.startX, e.clientY - mapDrag.startY) < 4) return;
+    mapDrag.started = true;
+    mapDragMoved = true;
+    const clone = document.createElement('div');
+    clone.className = 'map-drag-clone';
+    clone.textContent = mapDrag.name;
+    document.body.appendChild(clone);
+    mapDrag.clone = clone;
+  }
+  e.preventDefault();
+  mapDrag.clone.style.left = (e.clientX + 12) + 'px';
+  mapDrag.clone.style.top = (e.clientY + 12) + 'px';
+  const tgt = mapDragTarget(e.clientX, e.clientY);
+  if (mapDrag.highlight && mapDrag.highlight !== tgt) mapDrag.highlight.classList.remove('drag-over');
+  const sourceNode = tgt && tgt.dataset.seatId === mapDrag.sourceId;
+  if (tgt && !sourceNode) { tgt.classList.add('drag-over'); mapDrag.highlight = tgt; }
+  else mapDrag.highlight = null;
+}
+
+async function onMapSeatDragEnd(e) {
+  window.removeEventListener('pointermove', onMapSeatDragMove);
+  window.removeEventListener('pointerup', onMapSeatDragEnd);
+  const d = mapDrag;
+  mapDrag = null;
+  if (!d || !d.started) return; // it was a click, not a drag
+  if (d.clone) d.clone.remove();
+  if (d.highlight) d.highlight.classList.remove('drag-over');
+  const tgt = mapDragTarget(e.clientX, e.clientY);
+  if (!tgt) return;
+  const source = state.seats.find((s) => s.id === d.sourceId);
+  if (tgt.dataset.seatId) {
+    const target = state.seats.find((s) => s.id === tgt.dataset.seatId);
+    if (source && target && target.id !== source.id) {
+      if (source.status === 'occupied' && source.occupant) await adminMoveOrSwap(source.id, target.id);
+      else await moveDeskToSlot(source.id, target.table, getSeatSide(target)); // free desk joins that row
+    }
+  } else if (tgt.classList.contains('map-empty-slot')) {
+    await moveDeskToSlot(d.sourceId, tgt.dataset.table, tgt.dataset.side);
+  } else if (tgt.classList.contains('map-table-drop')) {
+    const table = tgt.dataset.table;
+    const rows = { top: 0, bottom: 0 };
+    state.seats.filter((s) => s.table === table && s.id !== d.sourceId).forEach((s) => { rows[getSeatSide(s)]++; });
+    await moveDeskToSlot(d.sourceId, table, rows.top <= rows.bottom ? 'top' : 'bottom');
+  }
+  setTimeout(() => { mapDragMoved = false; }, 60); // reset if no click follows
 }
 
 // ── Interactive SVG Map Tooltips and Click Handlers ─────────────────────────
@@ -1964,6 +2125,18 @@ function populateRenameOptions() {
     teamTableSel.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
     if (prev && seatTableGroups.includes(prev)) teamTableSel.value = prev;
   }
+  const moveSel = document.getElementById('move-table-select');
+  const posSel = document.getElementById('move-table-position');
+  if (moveSel) {
+    const prev = moveSel.value;
+    moveSel.innerHTML = seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('');
+    if (prev && seatTableGroups.includes(prev)) moveSel.value = prev;
+  }
+  if (posSel) {
+    const prev = posSel.value;
+    posSel.innerHTML = seatTableGroups.map((t, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+    if (prev && Number(prev) <= seatTableGroups.length) posSel.value = prev;
+  }
   populateRenameTeamOptions();
 }
 
@@ -1989,6 +2162,39 @@ function refreshAllViews() {
   renderAdminEmployees();
   renderAdminTeamFilters();
   populateAdminAddEmployeeFormOptions();
+}
+
+// Move a table to a new position on the floor; the tables in between shift along.
+// Positions follow the table numbers, so this renumbers the "Table N" tables
+// (1, 2, 3 …) and saves every affected desk / person to Supabase.
+async function moveTableToPosition(table, position) {
+  const order = [...seatTableGroups];
+  const from = order.indexOf(table);
+  const to = Math.min(Math.max(parseInt(position, 10) || 1, 1), order.length) - 1;
+  if (from < 0 || from === to) return;
+  order.splice(from, 1);
+  order.splice(to, 0, table);
+
+  const isNumbered = (t) => /^\s*table\s*0*\d+\s*$/i.test(t);
+  const renames = {};
+  order.forEach((t, i) => { if (isNumbered(t) && `Table ${i + 1}` !== t) renames[t] = `Table ${i + 1}`; });
+  if (!Object.keys(renames).length) return;
+
+  // Collect everything by OLD name first so the shifts cannot collide.
+  const seatsBy = {}, empsBy = {};
+  Object.keys(renames).forEach((old) => {
+    seatsBy[old] = state.seats.filter((s) => s.table === old);
+    empsBy[old] = state.employees.filter((e) => e.table === old);
+  });
+  const saves = [];
+  Object.keys(renames).forEach((old) => {
+    const name = renames[old];
+    seatsBy[old].forEach((s) => { s.table = name; saves.push(saveSeat(s)); });
+    empsBy[old].forEach((e) => { e.table = name; saves.push(updateEmployee(e.id, { table: name })); });
+  });
+  await Promise.all(saves);
+  refreshAllViews();
+  showToast(`${table} moved to position ${to + 1}`, 'success');
 }
 
 // Rename a table everywhere (seats + employees), persisting to Supabase.
@@ -2295,6 +2501,9 @@ function renderAdminSeatVisual() {
     const emptySlot = (side) => `<div class="admin-chair empty-slot" data-table="${tableName}" data-side="${side}" title="Empty — click to add a desk, or drop a person here"><span class="chair-num">+</span></div>`;
     const renderRow = (rowSeats, side) => {
       let html = rowSeats.map(chair).join('');
+      const otherCount = (side === 'top' ? bottomSeats : topSeats).length;
+      // only offer "+" where a new desk really lands on this row
+      if (rowSeats.length === 0 && otherCount < SEATS_PER_ROW) return html;
       for (let i = rowSeats.length; i < SEATS_PER_ROW; i++) html += emptySlot(side);
       return html;
     };
