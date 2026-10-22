@@ -1165,7 +1165,7 @@ function handleSeatClick(seatId) {
 
   const foreign = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
   const width = 240;
-  const height = (seat.status === 'free' && state.adminLoggedIn) ? 260 : 180;
+  const height = (seat.status === 'free' && state.adminLoggedIn) ? 390 : 180;
   foreign.setAttribute('x', (x - width / 2).toString());
   foreign.setAttribute('y', (y - height - 15).toString());
   foreign.setAttribute('width', width.toString());
@@ -1207,14 +1207,23 @@ function handleSeatClick(seatId) {
   } else {
     let actions = '';
     if (state.adminLoggedIn) {
-      const unassigned = state.employees.filter(e => !e.seat && !e.wfh);
-      const options = unassigned.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+      // Everyone can be picked (type to search). People without a desk are listed first;
+      // choosing someone who already has a desk moves them here.
+      const deskNames = new Set(state.seats.filter(x => x.status === 'occupied' && x.occupant).map(x => x.occupant.name.trim().toLowerCase()));
+      const people = state.employees
+        .filter(e => e.name !== 'Guest User')
+        .map(e => ({ name: e.name, dept: e.department || '', seated: deskNames.has(e.name.trim().toLowerCase()) }))
+        .sort((a, b) => (a.seated - b.seated) || a.name.localeCompare(b.name));
+      window.assignPeople = people;
       actions = `
         <div style="margin-bottom: 6px;">
-          <select id="popup-assign-select" style="width: 100%; padding: 4px; font-size: 0.75rem; margin-bottom: 6px; background: #334155; color: white; border: 1px solid #475569; border-radius: 4px;">
-            <option value="">-- Assign Employee --</option>
-            ${options}
-          </select>
+          <input id="popup-assign-select" placeholder="Type a name to search…" autocomplete="off"
+                 onmousedown="event.stopPropagation()" onclick="event.stopPropagation()"
+                 oninput="filterAssignPeople(this.value)"
+                 onkeydown="event.stopPropagation(); if(event.key==='Enter'){assignSeatFromPopup('${seat.id}')}"
+                 style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 0.78rem; margin-bottom: 4px; background: #334155; color: white; border: 1px solid #475569; border-radius: 4px;" />
+          <div id="popup-assign-results" onmousedown="event.stopPropagation()"
+               style="max-height: 110px; overflow-y: auto; margin-bottom: 6px; border-radius: 4px;"></div>
           <button class="btn primary small" onclick="assignSeatFromPopup('${seat.id}')" style="width: 100%;">Assign</button>
         </div>
         <button class="btn secondary small" onclick="reserveSeatFromPopup('${seat.id}')" style="width: 100%; margin-bottom: 6px;">Reserve</button>
@@ -1238,34 +1247,69 @@ function handleSeatClick(seatId) {
   }
 
   foreign.innerHTML = contentHtml;
+  if (document.getElementById('popup-assign-results')) filterAssignPeople('');
   popupGroup.appendChild(foreign);
   document.getElementById('svg-viewport').appendChild(popupGroup);
 }
 window.handleSeatClick = handleSeatClick;
 
+// Live name search inside the desk popup: shows matching people; click one to fill the box.
+function filterAssignPeople(value) {
+  const box = document.getElementById('popup-assign-results');
+  if (!box) return;
+  const q = value.trim().toLowerCase();
+  const hits = (window.assignPeople || []).filter((p) => !q || p.name.toLowerCase().includes(q)).slice(0, 40);
+  box.innerHTML = hits.map((p, i) => `
+    <div data-i="${i}" onclick="pickAssignPerson(${(window.assignPeople || []).indexOf(p)})"
+         style="padding:4px 6px;font-size:0.74rem;cursor:pointer;background:#1e293b;border-bottom:1px solid #334155;display:flex;justify-content:space-between;gap:6px;">
+      <span>${p.name}</span><span style="opacity:.65">${p.seated ? 'has a desk' : 'no desk'}</span>
+    </div>`).join('') || '<div style="padding:4px 6px;font-size:0.74rem;opacity:.7;">No match</div>';
+}
+function pickAssignPerson(index) {
+  const p = (window.assignPeople || [])[index];
+  const input = document.getElementById('popup-assign-select');
+  if (p && input) { input.value = p.name; input.focus(); }
+  const box = document.getElementById('popup-assign-results');
+  if (box) box.innerHTML = '';
+}
+window.filterAssignPeople = filterAssignPeople;
+window.pickAssignPerson = pickAssignPerson;
+
 async function assignSeatFromPopup(seatId) {
-  const select = document.getElementById('popup-assign-select');
-  if (!select || !select.value) return;
-  const empId = Number(select.value);
-  const emp = state.employees.find(e => e.id === empId);
+  const input = document.getElementById('popup-assign-select');
+  const typed = input ? input.value.trim().toLowerCase() : '';
+  if (!typed) return;
+  const emp = state.employees.find(e => e.name.trim().toLowerCase() === typed)
+    || (() => { // a unique partial match also works ("sanj" -> Sanjit Samant)
+      const hits = state.employees.filter(e => e.name.toLowerCase().includes(typed));
+      return hits.length === 1 ? hits[0] : null;
+    })();
   const seat = state.seats.find(s => s.id === seatId);
-  if (emp && seat && seat.status === 'free') {
-    seat.status = 'occupied';
-    seat.occupant = { name: emp.name, department: emp.department };
-    emp.seat = seatId;
-    emp.table = seat.table;
-    emp.wfh = false;
+  if (!emp) { showToast('No employee matches that name — pick one from the list.', 'error'); return; }
+  if (!seat || seat.status !== 'free') return;
 
-    await updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh });
-    await saveSeat(seat);
+  // if they already sit somewhere, free that desk first (they are moving)
+  const oldSeat = state.seats.find(s => s.status === 'occupied' && s.occupant
+    && s.occupant.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
+  if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; await saveSeat(oldSeat); }
 
-    renderFloorMap();
-    renderDirectory();
-    if (state.adminLoggedIn) {
-      renderAdminSeats();
-      renderAdminEmployees();
-    }
+  seat.status = 'occupied';
+  seat.occupant = { name: emp.name, department: emp.department };
+  emp.seat = seatId;
+  emp.table = seat.table;
+  emp.wfh = false;
+
+  await updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh });
+  await saveSeat(seat);
+
+  document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
+  renderFloorMap();
+  renderDirectory();
+  if (state.adminLoggedIn) {
+    renderAdminSeats();
+    renderAdminEmployees();
   }
+  showToast(`${emp.name} assigned to ${seat.label}`, 'success');
 }
 window.assignSeatFromPopup = assignSeatFromPopup;
 
