@@ -1166,8 +1166,16 @@ function handleSeatClick(seatId) {
   const foreign = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
   const width = 240;
   const height = (seat.status === 'free' && state.adminLoggedIn) ? 390 : 180;
-  foreign.setAttribute('x', (x - width / 2).toString());
-  foreign.setAttribute('y', (y - height - 15).toString());
+  // keep the popup inside the map: below the desk when there is no room above, and
+  // clamped to the edges (a popup outside the map makes the browser scroll the map
+  // away when you click into its name box)
+  const viewH = getViewHeight();
+  const popX = Math.min(Math.max(x - width / 2, 10), VIEW_W - width - 10);
+  let popY = y - height - 15;
+  if (popY < 10) popY = y + 30;
+  if (popY + height > viewH - 10) popY = Math.max(10, viewH - height - 10);
+  foreign.setAttribute('x', popX.toString());
+  foreign.setAttribute('y', popY.toString());
   foreign.setAttribute('width', width.toString());
   foreign.setAttribute('height', height.toString());
 
@@ -1277,16 +1285,29 @@ window.pickAssignPerson = pickAssignPerson;
 
 async function assignSeatFromPopup(seatId) {
   const input = document.getElementById('popup-assign-select');
-  const typed = input ? input.value.trim().toLowerCase() : '';
-  if (!typed) return;
-  const emp = state.employees.find(e => e.name.trim().toLowerCase() === typed)
+  const raw = input ? input.value.trim().replace(/\s+/g, ' ') : '';
+  const typed = raw.toLowerCase();
+  if (!typed) { showToast('Type a name first.', 'error'); return; }
+  const seat = state.seats.find(s => s.id === seatId);
+  if (!seat || seat.status !== 'free') return;
+
+  let emp = state.employees.find(e => e.name.trim().toLowerCase() === typed)
     || (() => { // a unique partial match also works ("sanj" -> Sanjit Samant)
       const hits = state.employees.filter(e => e.name.toLowerCase().includes(typed));
       return hits.length === 1 ? hits[0] : null;
     })();
-  const seat = state.seats.find(s => s.id === seatId);
-  if (!emp) { showToast('No employee matches that name — pick one from the list.', 'error'); return; }
-  if (!seat || seat.status !== 'free') return;
+
+  if (!emp) {
+    // not in the list: add them as a new person at this desk
+    if (!confirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`)) return;
+    const saved = await addEmployee({
+      name: raw, department: seat.department, seat: null, table: seat.table,
+      checkIn: getCurrentTime(), wfh: false,
+    });
+    if (!saved || !saved.id) { showToast('Could not save — the database rejected the insert.', 'error'); return; }
+    emp = { ...saved };
+    state.employees.push(emp);
+  }
 
   // if they already sit somewhere, free that desk first (they are moving)
   const oldSeat = state.seats.find(s => s.status === 'occupied' && s.occupant
@@ -2802,6 +2823,7 @@ function startAutoRefresh() {
   if (state.refreshIntervalId) clearInterval(state.refreshIntervalId);
   state.refreshIntervalId = setInterval(async () => {
     if (mapDrag && mapDrag.started) return; // don't redraw the map under a drag
+    if (document.querySelector('.map-seat-popup')) return; // nor wipe a popup someone is typing in
     await loadFromServer();
     await checkExpiredVisitors();
     await checkExpiredRooms();
