@@ -415,6 +415,16 @@ async function initApp() {
   startAutoRefresh();
   bindUIActions();
   setupVisualEffects();
+  showBuildStamp();
+}
+
+// Tiny corner label so it is obvious which copy of the app a browser is running.
+const APP_BUILD = '2026-10-22 · assign v4';
+function showBuildStamp() {
+  const el = document.createElement('div');
+  el.textContent = `Build ${APP_BUILD}`;
+  el.style.cssText = 'position:fixed;left:8px;bottom:6px;z-index:5;font:11px system-ui,sans-serif;color:#64748b;opacity:.75;pointer-events:none;';
+  document.body.appendChild(el);
 }
 
 // ── Parallax, scroll progress, reveal-on-scroll, topbar state ────────────────
