@@ -14,8 +14,3 @@ A frontend-only demo web app for a smart office seat occupancy system.
 ## Run
 
 Open `index.html` in your browser.
-
-## Admin Login
-
-- Username: `admin`
-- Password: `admin123`

@@ -16,8 +16,9 @@ const state = {
   adminTeamFilter: '',
   activeAdminTab: 'seats',
   employees: [],
-  adminLoggedIn: false,
+  adminLoggedIn: true, // no login: the admin panel is always open
   adminSearchQuery: '',
+  extraTeams: [],
   meetingRooms: [],
   refreshIntervalId: null,
   zoom: 1,
@@ -98,8 +99,8 @@ const mockEmployees = [
   { id: 43, name: 'Tarun Kamath', department: 'CS', seat: null, table: 'No desk', checkIn: '09:13 AM', wfh: true },
   { id: 44, name: 'Kshitij Bidvai', department: 'CS', seat: null, table: 'No desk', checkIn: '09:14 AM', wfh: true },
   { id: 53, name: 'Sunil Saundalkar', department: 'Studio', seat: null, table: 'No desk', checkIn: '09:23 AM', wfh: true },
-  { id: 66, name: 'Sumit Bansode', department: 'CD Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
-  { id: 67, name: 'Harish Nair', department: 'CD Copy', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 66, name: 'Sumit Bansode', department: 'CD Art/Copy/Planner', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 67, name: 'Harish Nair', department: 'CD Art/Copy/Planner', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 68, name: 'Anusha Pillai', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 69, name: 'Sakshi Chavan', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 70, name: 'Nidhi Chotalia', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
@@ -107,15 +108,13 @@ const mockEmployees = [
   { id: 72, name: 'Christos Lowrence Shetty', department: 'Video Team', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 73, name: 'Rajat Fartyal', department: 'Video Team', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 74, name: 'Ravindra Ambavkar', department: 'Studio', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
-  { id: 75, name: 'Vedant Kotian', department: 'Servicing', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 75, name: 'Vedant Kotian', department: 'CS', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 76, name: 'Dharmesh Gohil', department: 'Html', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
   { id: 77, name: 'Mehak Dhand', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
-  { id: 78, name: 'Prabhanjan Kasar', department: 'Planner', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
-  { id: 79, name: 'Sandesh Kadu', department: 'Unassigned', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
-  { id: 80, name: 'JHA DRIVER', department: 'Driver', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true }
+  { id: 78, name: 'Prabhanjan Kasar', department: 'CD Art/Copy/Planner', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true }
 ];
 
-// departmentOptions / directoryGroups / seatTableGroups / deptToTable are all
+// getTeamOptions() / directoryGroups / seatTableGroups / deptToTable are all
 // derived from tableConfig below (single source of truth).
 
 const defaultMeetingRooms = [
@@ -227,7 +226,35 @@ const TEAMS = [];
 tableConfig.forEach((t) => t.sides.forEach((s) => { if (!TEAMS.includes(s.team)) TEAMS.push(s.team); }));
 
 const directoryGroups = TEAMS;
-const departmentOptions = TEAMS;
+// Teams offered in dropdowns: the built-in ones plus every team actually in use
+// (or created via "New team…"), so teams like Digital / CS / Studio are selectable.
+function getTeamOptions() {
+  const set = new Set(TEAMS);
+  state.extraTeams.forEach((t) => set.add(t));
+  state.employees.forEach((e) => {
+    const t = (e.department || '').trim();
+    if (e.name !== 'Guest User' && t && t !== 'No desk') set.add(t);
+  });
+  state.seats.forEach((seat) => { if (seat.department) set.add(seat.department); });
+  return [...set];
+}
+
+// Ask for a new team name; returns the (existing or new) team, or null.
+function promptNewTeam() {
+  const name = (prompt('New team name:') || '').trim().replace(/\s+/g, ' ');
+  if (!name) return null;
+  const existing = getTeamOptions().find((t) => t.toLowerCase() === name.toLowerCase());
+  if (existing) return existing;
+  state.extraTeams.push(name);
+  return name;
+}
+
+// Team <select> change handler shared by Manage Employees and the roster.
+async function changePersonTeam(employeeId, value) {
+  const team = value === '__new__' ? promptNewTeam() : value;
+  if (team) await updateEmployeeDepartment(employeeId, team);
+  else { renderAdminEmployees(); renderTeamRoster(); } // cancelled — reset the dropdown
+}
 
 // team -> first table that contains it
 const deptToTable = {};
@@ -365,7 +392,7 @@ async function initApp() {
   renderDirectoryDeptOptions();
   renderDirectoryTableFilterOptions();
   renderDirectory();
-  renderAdminLoginState();
+  initAdminWorkspace();
   renderAdminSeats();
   renderAdminEmployees();
   renderDirectorySeatOptions();
@@ -490,8 +517,6 @@ function bindUIActions() {
     renderAdminEmployees();
   });
   document.getElementById('admin-daily-reset-btn').addEventListener('click', dailyReset);
-  document.getElementById('admin-login-btn').addEventListener('click', handleAdminLogin);
-  document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
   document.getElementById('employee-form').addEventListener('submit', handleEmployeeAdd);
   document.getElementById('employee-name').addEventListener('input', () => autofillDeptFromName('employee-name', 'employee-dept'));
   const seatForm = document.getElementById('seat-form');
@@ -1606,7 +1631,7 @@ function animateCount(el, target, suffix = '') {
 
 function renderDirectoryDeptOptions() {
   document.getElementById('directory-add-dept').innerHTML =
-    departmentOptions.map((d) => `<option value="${d}">${d}</option>`).join('');
+    getTeamOptions().map((d) => `<option value="${d}">${d}</option>`).join('');
 }
 
 function renderDirectorySeatOptions() {
@@ -1622,7 +1647,7 @@ function updateDepartmentFromSeat() {
   const seatSelect = document.getElementById('directory-add-seat');
   const deptSelect = document.getElementById('directory-add-dept');
   const suggested = getSeatDepartment(seatSelect.value);
-  if (suggested && departmentOptions.includes(suggested)) deptSelect.value = suggested;
+  if (suggested && getTeamOptions().includes(suggested)) deptSelect.value = suggested;
 }
 
 // ── Write actions (all async — save to API) ───────────────────────────────────
@@ -1645,7 +1670,7 @@ async function handleDirectoryAdd(event) {
   state.employees.push({ ...saved });
   await saveSeat(seatRecord);
   nameInput.value = '';
-  deptInput.value = departmentOptions[0];
+  deptInput.value = getTeamOptions()[0];
   renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
 }
 
@@ -1787,8 +1812,8 @@ function renderAdminTeamFilters() {
     ...state.seats.map(seat => seat.department),
   ].filter(Boolean));
   const filteredOptions = [
-    ...departmentOptions.filter(d => activeDepts.has(d)),
-    ...[...activeDepts].filter(d => !departmentOptions.includes(d)).sort(),
+    ...getTeamOptions().filter(d => activeDepts.has(d)),
+    ...[...activeDepts].filter(d => !getTeamOptions().includes(d)).sort(),
   ];
   
   const activeClassAll = state.adminTeamFilter === '' ? 'active' : '';
@@ -1847,7 +1872,7 @@ function populateAdminAddEmployeeFormOptions() {
   // Populate Department Select
   const deptSelect = document.getElementById('employee-dept');
   if (deptSelect) {
-    deptSelect.innerHTML = departmentOptions.map(dept => `<option value="${dept}">${dept}</option>`).join('');
+    deptSelect.innerHTML = getTeamOptions().map(dept => `<option value="${dept}">${dept}</option>`).join('');
   }
   
   // Populate Seat Select
@@ -1895,7 +1920,7 @@ function autofillDeptFromName(nameInputId, deptInputId) {
   const match = buildNameRoster().find((p) => p.name.toLowerCase() === typed);
   if (!match || !match.department) return;
   if (deptInput.tagName === 'SELECT') {
-    if (departmentOptions.includes(match.department)) deptInput.value = match.department;
+    if (getTeamOptions().includes(match.department)) deptInput.value = match.department;
   } else {
     deptInput.value = match.department;
   }
@@ -2019,45 +2044,26 @@ async function handleSeatAdd(event) {
   showToast(`${label} added to ${table}`, 'success');
 }
 
-function renderAdminLoginState() {
-  document.getElementById('admin-login-panel').classList.toggle('hidden', state.adminLoggedIn);
-  document.getElementById('admin-dashboard').classList.toggle('hidden', !state.adminLoggedIn);
-  if (state.adminLoggedIn) {
-    state.adminTeamFilter = ''; // Reset team filter
-    renderAdminTeamFilters();
-    initAdminTabs();
-    // Default to seat control tab
-    const navSeatsBtn = document.getElementById('admin-nav-seats');
-    if (navSeatsBtn) {
-      navSeatsBtn.click();
-    }
-  }
+function initAdminWorkspace() {
+  state.adminTeamFilter = '';
+  renderAdminTeamFilters();
+  initAdminTabs();
+  // Default to seat control tab
+  const navSeatsBtn = document.getElementById('admin-nav-seats');
+  if (navSeatsBtn) navSeatsBtn.click();
 }
 
-function handleAdminLogin() {
-  const username = document.getElementById('admin-user').value.trim();
-  const password = document.getElementById('admin-pass').value;
-  const errorText = document.getElementById('login-error');
-  if (username === 'admin' && password === 'admin123') {
-    state.adminLoggedIn = true;
-    errorText.classList.add('hidden');
-    renderAdminLoginState(); renderAdminSeats(); renderAdminEmployees();
-  } else {
-    errorText.classList.remove('hidden');
-  }
-}
-
-function handleAdminLogout() {
-  state.adminLoggedIn = false;
-  document.getElementById('admin-user').value = '';
-  document.getElementById('admin-pass').value = '';
-  renderAdminLoginState();
-}
-
-// A person's team: the team of their desk when seated, else their own label.
+// A person's team: their own team label, else the team of their desk.
 function getEmployeeTeam(emp) {
   const seat = emp.seat ? state.seats.find((s) => s.id === emp.seat) : null;
-  return (seat && seat.department) || emp.department || '';
+  return emp.department || (seat && seat.department) || '';
+}
+
+// A desk matches a team if its zone is that team, or the person sitting there is.
+function seatMatchesTeam(seat, team) {
+  if (!team || seat.department === team) return true;
+  const emp = state.employees.find((e) => e.seat === seat.id);
+  return !!emp && getEmployeeTeam(emp) === team;
 }
 
 // Add a person to the selected team (no desk yet) and save to the database.
@@ -2108,31 +2114,32 @@ async function rosterRenamePerson(employeeId) {
   showToast(`${oldName} renamed to ${name}`, 'success');
 }
 
-// Left-hand roster for the selected team: every person in it, and whether
-// they have a desk (Yes / No). Hidden when "All Teams" is selected.
+// Left-hand roster: everyone in the selected team (or every team when "All
+// Teams" is selected), and whether they have a desk (Yes / No).
 function renderTeamRoster() {
   const panel = document.getElementById('team-roster');
   if (!panel) return;
   const team = state.adminTeamFilter;
-  if (!team) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+  const q = state.adminSearchQuery.trim().toLowerCase();
+  // The desks are the source of truth: a person has a seat only if a desk
+  // actually has their name on it (an employee's own `seat` field can be stale).
+  const seatByName = new Map();
+  state.seats.forEach((s) => {
+    if (s.status === 'occupied' && s.occupant && s.occupant.name) {
+      seatByName.set(s.occupant.name.trim().toLowerCase(), s);
+    }
+  });
   const esc = (v) => String(v).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const people = state.employees
-    .filter((e) => getEmployeeTeam(e) === team)
-    .map((e) => {
-      const seat = e.seat ? state.seats.find((s) => s.id === e.seat) : null;
-      return { id: e.id, name: e.name, seat };
-    })
+    .filter((e) => e.name !== 'Guest User' && (!team || getEmployeeTeam(e) === team))
+    .filter((e) => !q || e.name.toLowerCase().includes(q) || ((seatByName.get(e.name.trim().toLowerCase()) || {}).id || '').toLowerCase().includes(q))
+    .map((e) => ({ id: e.id, name: e.name, team: getEmployeeTeam(e) || 'No team', seat: seatByName.get(e.name.trim().toLowerCase()) || null }))
     .sort((a, b) => (!a.seat - !b.seat) || a.name.localeCompare(b.name)); // no-desk first
   const assigned = people.filter((p) => p.seat).length;
-  panel.classList.remove('hidden');
-  panel.innerHTML = `
-    <h4>${esc(team)}</h4>
-    <div class="team-roster-summary">${assigned} of ${people.length} have a seat · ${people.length - assigned} without</div>
-    <form class="team-roster-add" autocomplete="off">
-      <input type="text" placeholder="Add person to ${esc(team)}" required />
-      <button type="submit" class="btn primary small">Add</button>
-    </form>
-    ${people.map((p) => `
+  const teamOptionsHtml = (current) => getTeamOptions()
+    .map((t) => `<option value="${esc(t)}"${t === current ? ' selected' : ''}>${esc(t)}</option>`)
+    .join('') + '<option value="__new__">➕ New team…</option>';
+  const row = (p) => `
       <div class="team-roster-row${p.seat ? ' has-seat' : ''}" data-id="${p.id}"${p.seat ? ` data-seat="${esc(p.seat.id)}" title="Show ${esc(p.seat.label)} on the layout"` : ''}>
         <span class="team-roster-name">${esc(p.name)}</span>
         <span class="team-roster-badge ${p.seat ? 'yes' : 'no'}">${p.seat ? `Seat: Yes · ${esc(p.seat.label)}` : 'Seat: No'}</span>
@@ -2140,8 +2147,40 @@ function renderTeamRoster() {
           <button type="button" class="roster-edit" title="Rename">✏</button>
           <button type="button" class="roster-remove" title="Remove">🗑</button>
         </span>
-      </div>`).join('') || '<div class="team-roster-summary">No people in this team.</div>'}`;
-  panel.querySelector('.team-roster-add').addEventListener('submit', (e) => {
+        <select class="roster-team" title="Change team">${teamOptionsHtml(p.team)}</select>
+      </div>`;
+  let body;
+  if (team) {
+    body = people.map(row).join('');
+  } else {
+    const groups = {};
+    people.forEach((p) => { (groups[p.team] = groups[p.team] || []).push(p); });
+    body = Object.keys(groups).sort().map((t) => `
+      <div class="team-roster-group">${esc(t)} <span>${groups[t].filter((p) => p.seat).length}/${groups[t].length}</span></div>
+      ${groups[t].map(row).join('')}`).join('');
+  }
+  panel.classList.remove('hidden');
+  panel.innerHTML = `
+    <h4>${team ? esc(team) : 'All teams'}</h4>
+    <input type="search" class="team-roster-search" placeholder="Search name or desk…" value="${esc(state.adminSearchQuery)}" />
+    <div class="team-roster-summary">${assigned} of ${people.length} have a seat · ${people.length - assigned} without</div>
+    ${team ? `<form class="team-roster-add" autocomplete="off">
+      <input type="text" placeholder="Add person to ${esc(team)}" required />
+      <button type="submit" class="btn primary small">Add</button>
+    </form>` : '<div class="team-roster-summary">Pick a team above to add a person to it.</div>'}
+    ${body || '<div class="team-roster-summary">No people in this team.</div>'}`;
+  const searchBox = panel.querySelector('.team-roster-search');
+  searchBox.addEventListener('input', (e) => {
+    state.adminSearchQuery = e.target.value;
+    const top = document.getElementById('admin-search');
+    if (top) top.value = e.target.value;
+    renderAdminSeats();
+    renderAdminEmployees();
+    const again = document.querySelector('#team-roster .team-roster-search');
+    if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+  });
+  const addForm = panel.querySelector('.team-roster-add');
+  if (addForm) addForm.addEventListener('submit', (e) => {
     e.preventDefault();
     rosterAddPerson(team, e.target.querySelector('input').value);
   });
@@ -2149,6 +2188,10 @@ function renderTeamRoster() {
     e.stopPropagation();
     rosterRenamePerson(Number(btn.closest('.team-roster-row').dataset.id));
   }));
+  panel.querySelectorAll('.roster-team').forEach((sel) => {
+    sel.addEventListener('click', (e) => e.stopPropagation());
+    sel.addEventListener('change', () => changePersonTeam(Number(sel.closest('.team-roster-row').dataset.id), sel.value));
+  });
   panel.querySelectorAll('.roster-remove').forEach((btn) => btn.addEventListener('click', (e) => {
     e.stopPropagation();
     removeEmployee(Number(btn.closest('.team-roster-row').dataset.id));
@@ -2169,7 +2212,7 @@ function renderAdminSeats() {
   if (!tableBody) return;
   const q = state.adminSearchQuery.toLowerCase();
   const filteredSeats = state.seats.filter(seat => {
-    const teamMatch = !state.adminTeamFilter || seat.department === state.adminTeamFilter;
+    const teamMatch = seatMatchesTeam(seat, state.adminTeamFilter);
     const searchMatch = !q || seat.id.toLowerCase().includes(q) ||
       seat.department?.toLowerCase().includes(q) ||
       seat.table?.toLowerCase().includes(q) ||
@@ -2209,7 +2252,7 @@ function renderAdminSeats() {
 function getFilteredAdminSeats() {
   const q = state.adminSearchQuery.toLowerCase();
   return state.seats.filter(seat => {
-    const teamMatch = !state.adminTeamFilter || seat.department === state.adminTeamFilter;
+    const teamMatch = seatMatchesTeam(seat, state.adminTeamFilter);
     const searchMatch = !q || seat.id.toLowerCase().includes(q) ||
       seat.department?.toLowerCase().includes(q) ||
       seat.table?.toLowerCase().includes(q) ||
@@ -2401,12 +2444,18 @@ function getStatusColor(status) {
 
 async function updateEmployeeDepartment(employeeId, newDept) {
   const emp = state.employees.find(e => e.id === employeeId);
-  if (!emp) return;
-  
+  if (!emp || emp.department === newDept) return;
+
+  const result = await updateEmployee(emp.id, { department: newDept });
+  if (result && result.ok === false) {
+    showToast('Could not save the team — the database rejected the change.', 'error');
+    renderAdminEmployees(); renderTeamRoster();
+    return;
+  }
   const oldDept = emp.department;
   emp.department = newDept;
-  
-  // If the employee occupies a seat, we must update the occupant's department on that seat too!
+
+  // If the employee occupies a seat, update the occupant's department on that seat too.
   if (emp.seat) {
     const seat = state.seats.find(s => s.id === emp.seat);
     if (seat && seat.occupant) {
@@ -2414,8 +2463,6 @@ async function updateEmployeeDepartment(employeeId, newDept) {
       await saveSeat(seat);
     }
   }
-
-  await updateEmployee(emp.id, { department: newDept });
 
   // If the active filter was the old department, reset it since they changed it
   if (state.adminTeamFilter === oldDept) {
@@ -2451,10 +2498,10 @@ function renderAdminEmployees() {
     const btnClass = emp.wfh ? 'success' : 'secondary';
     
     // Create department dropdown select
-    const deptSelectOptions = departmentOptions.map(d => {
+    const deptSelectOptions = getTeamOptions().map(d => {
       const selected = d === emp.department ? 'selected' : '';
       return `<option value="${d}" ${selected}>${d}</option>`;
-    }).join('');
+    }).join('') + '<option value="__new__">➕ New team…</option>';
     
     const deptDropdown = `
       <select data-id="${emp.id}" class="admin-dept-select" style="padding: 4px 8px; background: #1e293b; color: white; border: 1px solid #334155; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
@@ -2483,9 +2530,7 @@ function renderAdminEmployees() {
   
   document.querySelectorAll('.admin-dept-select').forEach((select) => {
     select.addEventListener('change', (e) => {
-      const empId = Number(select.dataset.id);
-      const newDept = select.value;
-      updateEmployeeDepartment(empId, newDept);
+      changePersonTeam(Number(select.dataset.id), select.value);
     });
   });
 }

@@ -1973,3 +1973,7 @@ input:focus, select:focus {
 .team-roster-actions button:hover { opacity: 1; background: #eef2f7; }
 .team-roster-row { flex-wrap: wrap; }
 .team-roster-name { flex: 1 1 100px; min-width: 0; }
+.team-roster-group { display: flex; justify-content: space-between; margin: 12px 0 2px; padding: 4px 6px; background: #eef2f7; border-radius: 6px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.team-roster-group span { color: var(--muted); font-weight: 600; }
+.team-roster-search { width: 100%; box-sizing: border-box; margin: 4px 0 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
+.team-roster-row .roster-team { flex: 1 1 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.78rem; background: #fff; color: #334155; }
