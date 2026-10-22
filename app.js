@@ -470,6 +470,10 @@ async function initApp() {
   showBuildStamp();
 }
 
+// Surface hidden script errors on screen instead of failing silently.
+window.addEventListener('error', (e) => { try { showToast('Error: ' + (e.message || 'unknown'), 'error'); } catch (_) {} });
+window.addEventListener('unhandledrejection', (e) => { try { showToast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 'error'); } catch (_) {} });
+
 // Tiny corner label so it is obvious which copy of the app a browser is running.
 const APP_BUILD = '2026-10-22 · assign v5';
 function showBuildStamp() {
