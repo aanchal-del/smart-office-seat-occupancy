@@ -1982,3 +1982,5 @@ input:focus, select:focus {
 .map-empty-slot:hover circle { stroke: #2563eb; }
 .map-empty-slot.drag-over circle { stroke: #2563eb; stroke-width: 3; fill: rgba(37, 99, 235, 0.15); }
 .map-table-drop.drag-over { stroke: #2563eb; stroke-width: 4; }
+.map-seat-popup-html { position: fixed; z-index: 1000; width: 250px; max-height: calc(100vh - 16px); overflow-y: auto; border-radius: 14px; }
+.map-seat-popup-html .popup-card::after { display: none; }

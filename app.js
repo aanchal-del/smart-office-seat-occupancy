@@ -717,6 +717,7 @@ window.resetZoom = resetZoom;
 function renderFloorMap() {
   if (state.tableVisualMode) { renderTableVisual(); return; }
   const mapContainer = document.getElementById('floor-map');
+  document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
   mapContainer.innerHTML = '';
   mapContainer.className = 'floor-map svg-mode';
   const viewH = getViewHeight();
@@ -1160,25 +1161,6 @@ function handleSeatClick(seatId) {
   if (!coords) return;
   const { x, y } = coords;
 
-  const popupGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  popupGroup.setAttribute('class', 'map-seat-popup');
-
-  const foreign = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-  const width = 240;
-  const height = (seat.status === 'free' && state.adminLoggedIn) ? 390 : 180;
-  // keep the popup inside the map: below the desk when there is no room above, and
-  // clamped to the edges (a popup outside the map makes the browser scroll the map
-  // away when you click into its name box)
-  const viewH = getViewHeight();
-  const popX = Math.min(Math.max(x - width / 2, 10), VIEW_W - width - 10);
-  let popY = y - height - 15;
-  if (popY < 10) popY = y + 30;
-  if (popY + height > viewH - 10) popY = Math.max(10, viewH - height - 10);
-  foreign.setAttribute('x', popX.toString());
-  foreign.setAttribute('y', popY.toString());
-  foreign.setAttribute('width', width.toString());
-  foreign.setAttribute('height', height.toString());
-
   let contentHtml = '';
   if (seat.status === 'occupied' && seat.occupant) {
     const isVisitor = seat.occupant?.type === 'visitor';
@@ -1254,10 +1236,26 @@ function handleSeatClick(seatId) {
       </div>`;
   }
 
-  foreign.innerHTML = contentHtml;
+  // A normal page overlay (not inside the SVG): clicks, typing and focus behave the same
+  // in every browser, and it can never be clipped by or scroll the map.
+  const popup = document.createElement('div');
+  popup.className = 'map-seat-popup map-seat-popup-html';
+  popup.innerHTML = contentHtml;
+  popup.style.visibility = 'hidden';
+  document.body.appendChild(popup);
   if (document.getElementById('popup-assign-results')) filterAssignPeople('');
-  popupGroup.appendChild(foreign);
-  document.getElementById('svg-viewport').appendChild(popupGroup);
+
+  const anchor = document.querySelector(`.seat-node[data-seat-id="${CSS.escape(seatId)}"]`);
+  const r = anchor ? anchor.getBoundingClientRect() : { left: window.innerWidth / 2, right: window.innerWidth / 2, top: 120, bottom: 120 };
+  const pw = popup.offsetWidth, ph = popup.offsetHeight;
+  let left = (r.left + r.right) / 2 - pw / 2;
+  left = Math.min(Math.max(left, 8), window.innerWidth - pw - 8);
+  let top = r.top - ph - 10;                              // above the desk …
+  if (top < 8) top = r.bottom + 10;                       // … or below if there is no room
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ph - 8);
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+  popup.style.visibility = '';
 }
 window.handleSeatClick = handleSeatClick;
 
