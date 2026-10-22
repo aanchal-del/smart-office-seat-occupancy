@@ -44,8 +44,6 @@ try {
 }
 
 const mockEmployees = [
-  { id: 1, name: 'Sujay Bhonsle', department: 'CS', seat: 'Desk 1', table: 'Table 1', checkIn: '09:11 AM', wfh: false },
-  { id: 2, name: 'Smriti Tewari', department: 'CS', seat: 'Desk 2', table: 'Table 1', checkIn: '09:12 AM', wfh: false },
   { id: 3, name: 'Blaise Vaz', department: 'CS', seat: 'Desk 3', table: 'Table 1', checkIn: '09:13 AM', wfh: false },
   { id: 31, name: 'Jyoti Nair', department: 'CS', seat: 'Desk 4', table: 'Table 1', checkIn: '09:41 AM', wfh: false },
   { id: 32, name: 'Bhagyashree Shah', department: 'CS', seat: 'Desk 5', table: 'Table 1', checkIn: '09:42 AM', wfh: false },
@@ -54,13 +52,10 @@ const mockEmployees = [
   { id: 35, name: 'Pranjal Agarwal', department: 'CS', seat: 'Desk 8', table: 'Table 1', checkIn: '09:45 AM', wfh: false },
   { id: 36, name: 'Srushti Chawhan', department: 'CS', seat: 'Desk 9', table: 'Table 1', checkIn: '09:46 AM', wfh: false },
   { id: 37, name: 'Nathanial Siqueira Vaz', department: 'CS', seat: 'Desk 10', table: 'Table 1', checkIn: '09:47 AM', wfh: false },
-  { id: 38, name: 'Dhruti Maru', department: 'CS', seat: 'Desk 11', table: 'Table 1', checkIn: '09:48 AM', wfh: false },
   { id: 39, name: 'Dhyan Ramnani', department: 'CS', seat: 'Desk 12', table: 'Table 1', checkIn: '09:49 AM', wfh: false },
   { id: 11, name: 'Rupesh Doiphode', department: 'Art', seat: 'Desk 13', table: 'Table 2', checkIn: '09:21 AM', wfh: false },
   { id: 12, name: 'Yogesh More', department: 'Art', seat: 'Desk 14', table: 'Table 2', checkIn: '09:22 AM', wfh: false },
   { id: 13, name: 'Rahul Kumawat', department: 'Art', seat: 'Desk 15', table: 'Table 2', checkIn: '09:23 AM', wfh: false },
-  { id: 14, name: 'Masumi Shrimankar', department: 'Art', seat: 'Desk 16', table: 'Table 2', checkIn: '09:24 AM', wfh: false },
-  { id: 15, name: 'Dhruvi Shah', department: 'Art', seat: 'Desk 17', table: 'Table 2', checkIn: '09:25 AM', wfh: false },
   { id: 16, name: 'Sonali Sawant', department: 'Art', seat: 'Desk 18', table: 'Table 2', checkIn: '09:26 AM', wfh: false },
   { id: 17, name: 'Sushant Agare', department: 'Art', seat: 'Desk 19', table: 'Table 2', checkIn: '09:27 AM', wfh: false },
   { id: 18, name: 'Amey Lad', department: 'Art', seat: 'Desk 20', table: 'Table 2', checkIn: '09:28 AM', wfh: false },
@@ -73,27 +68,23 @@ const mockEmployees = [
   { id: 27, name: 'Anarghya Poojary', department: 'Copy', seat: 'Desk 27', table: 'Table 3', checkIn: '09:37 AM', wfh: false },
   { id: 28, name: 'Juhi Pravin Shah', department: 'Copy', seat: 'Desk 28', table: 'Table 3', checkIn: '09:38 AM', wfh: false },
   { id: 29, name: 'Gaurav Pant', department: 'Copy', seat: 'Desk 29', table: 'Table 3', checkIn: '09:39 AM', wfh: false },
-  { id: 30, name: 'Aditya Salve', department: 'Copy', seat: 'Desk 30', table: 'Table 3', checkIn: '09:40 AM', wfh: false },
   { id: 4, name: 'Viraj Chorghe', department: 'Flims', seat: 'Desk 31', table: 'Table 4', checkIn: '09:14 AM', wfh: false },
   { id: 5, name: 'Varun Lalka', department: 'Flims', seat: 'Desk 32', table: 'Table 4', checkIn: '09:15 AM', wfh: false },
   { id: 6, name: 'Darryl Gomes', department: 'Flims', seat: 'Desk 33', table: 'Table 4', checkIn: '09:16 AM', wfh: false },
   { id: 7, name: 'Ashok Chatla', department: 'Flims', seat: 'Desk 34', table: 'Table 4', checkIn: '09:17 AM', wfh: false },
   { id: 8, name: 'Raj Kolambkar', department: 'Flims', seat: 'Desk 35', table: 'Table 4', checkIn: '09:18 AM', wfh: false },
   { id: 9, name: 'Avishkar Mandavkar', department: 'Flims', seat: 'Desk 36', table: 'Table 4', checkIn: '09:19 AM', wfh: false },
-  { id: 10, name: 'Bhaskar Wooragonda', department: 'Flims', seat: 'Desk 37', table: 'Table 4', checkIn: '09:20 AM', wfh: false },
   { id: 46, name: 'Dattaram Kambli', department: 'Studio', seat: 'Desk 38', table: 'Table 5', checkIn: '09:16 AM', wfh: false },
   { id: 47, name: 'Biju Dasan', department: 'Studio', seat: 'Desk 39', table: 'Table 5', checkIn: '09:17 AM', wfh: false },
   { id: 48, name: 'Uday Panchal', department: 'Studio', seat: 'Desk 40', table: 'Table 5', checkIn: '09:18 AM', wfh: false },
   { id: 49, name: 'Ashish Kumbhar', department: 'Studio', seat: 'Desk 41', table: 'Table 5', checkIn: '09:19 AM', wfh: false },
   { id: 50, name: 'Navnath Bhere', department: 'Studio', seat: 'Desk 42', table: 'Table 5', checkIn: '09:20 AM', wfh: false },
   { id: 51, name: 'Rajesh K Bhardwaj', department: 'Studio', seat: 'Desk 43', table: 'Table 5', checkIn: '09:21 AM', wfh: false },
-  { id: 52, name: 'Abhishek Shelar', department: 'Studio', seat: 'Desk 44', table: 'Table 5', checkIn: '09:22 AM', wfh: false },
   { id: 54, name: 'Meghna Gambhir', department: 'Digital', seat: 'Desk 45', table: 'Table 6', checkIn: '09:24 AM', wfh: false },
   { id: 55, name: 'Amaan Khan', department: 'Digital', seat: 'Desk 46', table: 'Table 6', checkIn: '09:25 AM', wfh: false },
   { id: 56, name: 'Mohit Devganiya', department: 'Digital', seat: 'Desk 47', table: 'Table 6', checkIn: '09:26 AM', wfh: false },
   { id: 57, name: 'Prem Gohil', department: 'Digital', seat: 'Desk 48', table: 'Table 6', checkIn: '09:27 AM', wfh: false },
   { id: 58, name: 'Gaurav Gohil', department: 'Digital', seat: 'Desk 49', table: 'Table 6', checkIn: '09:28 AM', wfh: false },
-  { id: 59, name: 'Nitesh Kumar', department: 'Digital', seat: 'Desk 50', table: 'Table 6', checkIn: '09:29 AM', wfh: false },
   { id: 60, name: 'Aanchal Choudhary', department: 'Digital', seat: 'Desk 51', table: 'Table 6', checkIn: '09:30 AM', wfh: false },
   { id: 61, name: 'Jennifer Sequeira', department: 'Digital', seat: 'Desk 52', table: 'Table 6', checkIn: '09:31 AM', wfh: false },
   { id: 62, name: 'Vidya Sridhar', department: 'Digital', seat: 'Desk 53', table: 'Table 6', checkIn: '09:32 AM', wfh: false },
@@ -101,17 +92,27 @@ const mockEmployees = [
   { id: 64, name: 'Yatin Ashok Mhatre', department: 'Digital', seat: 'Desk 55', table: 'Table 6', checkIn: '09:34 AM', wfh: false },
   { id: 65, name: 'Akshita Datir', department: 'Digital', seat: 'Desk 56', table: 'Table 6', checkIn: '09:35 AM', wfh: false },
   { id: 21, name: 'Siya Pandit', department: 'Art', seat: null, table: 'No desk', checkIn: '09:31 AM', wfh: true },
-  { id: 22, name: 'Sumedh Sawant', department: 'Art', seat: null, table: 'No desk', checkIn: '09:32 AM', wfh: true },
   { id: 40, name: 'Jayalaxmi Ravi', department: 'CS', seat: null, table: 'No desk', checkIn: '09:10 AM', wfh: true },
   { id: 41, name: 'Abhay Khabale', department: 'CS', seat: null, table: 'No desk', checkIn: '09:11 AM', wfh: true },
   { id: 42, name: 'Steffi Barboza', department: 'CS', seat: null, table: 'No desk', checkIn: '09:12 AM', wfh: true },
   { id: 43, name: 'Tarun Kamath', department: 'CS', seat: null, table: 'No desk', checkIn: '09:13 AM', wfh: true },
   { id: 44, name: 'Kshitij Bidvai', department: 'CS', seat: null, table: 'No desk', checkIn: '09:14 AM', wfh: true },
-  { id: 45, name: 'Anoushka Kabre', department: 'CS', seat: null, table: 'No desk', checkIn: '09:15 AM', wfh: true },
   { id: 53, name: 'Sunil Saundalkar', department: 'Studio', seat: null, table: 'No desk', checkIn: '09:23 AM', wfh: true },
-  { id: 66, name: 'Intern 1', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
-  { id: 67, name: 'Intern 2', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true },
-  { id: 68, name: 'Intern 3', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:36 AM', wfh: true }
+  { id: 66, name: 'Sumit Bansode', department: 'CD Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 67, name: 'Harish Nair', department: 'CD Copy', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 68, name: 'Anusha Pillai', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 69, name: 'Sakshi Chavan', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 70, name: 'Nidhi Chotalia', department: 'Art', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 71, name: 'Samina Jesawadawala', department: 'Copy', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 72, name: 'Christos Lowrence Shetty', department: 'Video Team', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 73, name: 'Rajat Fartyal', department: 'Video Team', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 74, name: 'Ravindra Ambavkar', department: 'Studio', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 75, name: 'Vedant Kotian', department: 'Servicing', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 76, name: 'Dharmesh Gohil', department: 'Html', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 77, name: 'Mehak Dhand', department: 'Digital', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 78, name: 'Prabhanjan Kasar', department: 'Planner', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 79, name: 'Sandesh Kadu', department: 'Unassigned', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true },
+  { id: 80, name: 'JHA DRIVER', department: 'Driver', seat: null, table: 'No desk', checkIn: '09:00 AM', wfh: true }
 ];
 
 // departmentOptions / directoryGroups / seatTableGroups / deptToTable are all
@@ -341,9 +342,10 @@ async function addEmployee(employee) {
 }
 
 async function updateEmployee(id, patch) {
-  if (!_supabase) return;
+  if (!_supabase) return { ok: true };
   const { error } = await _supabase.from('employees').update(patch).eq('id', id);
-  if (error) console.warn('updateEmployee failed:', error);
+  if (error) { console.warn('updateEmployee failed:', error); return { ok: false, error }; }
+  return { ok: true };
 }
 
 async function deleteEmployee(id) {
@@ -1310,30 +1312,61 @@ async function adminMoveOrSwap(sourceSeatId, targetSeatId) {
   renderAdminEmployees();
 }
 
+// Find a free seat on a table side, or add one desk there (kept within the
+// 5-per-row / 10-per-table limit). Returns the seat, or null if the table is full.
+async function getOrAddDeskOnSide(table, side) {
+  const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
+  let target = sideSeats.find((s) => s.status === 'free');
+  if (target) return target;
+  if (state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) return null;
+  const cfg = tableConfig.find((t) => t.table === table);
+  const cfgSide = cfg && cfg.sides[side === 'top' ? 0 : 1];
+  const teamForSide = (sideSeats[0] && sideSeats[0].department)
+    || (cfgSide && cfgSide.team)
+    || (state.seats.find((s) => s.table === table) || {}).department
+    || table;
+  const id = getNextDeskLabel();
+  target = { id, label: id, floor: 'main-floor', status: 'free', occupant: null, department: teamForSide, table, color: null };
+  state.seats.push(target);
+  state.seats = sortSeats(state.seats);
+  await createSeat(target);
+  return target;
+}
+
 // Drop onto an empty slot of a given side: use a free seat already on that side,
-// otherwise add one desk there (kept within the 5-per-row / 10-per-table limit),
-// then move the dragged person into it.
+// otherwise add one desk there, then move the dragged person into it.
 async function adminDropOnEmptySlot(sourceSeatId, table, side) {
   const source = state.seats.find((s) => s.id === sourceSeatId);
   if (!source || source.status !== 'occupied') return;
-  const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
-  let target = sideSeats.find((s) => s.status === 'free');
+  const target = await getOrAddDeskOnSide(table, side);
   if (!target) {
-    if (state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) {
-      showToast('That row is full — drop on a person to swap instead.', 'error');
-      return;
-    }
-    const cfg = tableConfig.find((t) => t.table === table);
-    const teamForSide = (sideSeats[0] && sideSeats[0].department)
-      || (cfg && cfg.sides[side === 'top' ? 0 : 1] && cfg.sides[side === 'top' ? 0 : 1].team)
-      || source.department;
-    const id = getNextDeskLabel();
-    target = { id, label: id, floor: 'main-floor', status: 'free', occupant: null, department: teamForSide, table, color: null };
-    state.seats.push(target);
-    state.seats = sortSeats(state.seats);
-    await createSeat(target);
+    showToast('That row is full — drop on a person to swap instead.', 'error');
+    return;
   }
   await adminMoveOrSwap(sourceSeatId, target.id);
+}
+
+// Click on an empty "+" slot: add a new free desk at the end of that row.
+async function adminAddDeskToSlot(table, side) {
+  const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
+  if (sideSeats.length >= SEATS_PER_ROW || state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) {
+    showToast('That row is full.', 'error');
+    return;
+  }
+  const id = getNextDeskLabel();
+  const cfg = tableConfig.find((t) => t.table === table);
+  const cfgSide = cfg && cfg.sides[side === 'top' ? 0 : 1];
+  const department = (sideSeats[0] && sideSeats[0].department)
+    || (cfgSide && cfgSide.team)
+    || (state.seats.find((s) => s.table === table) || {}).department
+    || table;
+  const seat = { id, label: id, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
+  const saved = await createSeat(seat);
+  state.seats.push({ ...seat, ...saved });
+  state.seats = sortSeats(state.seats);
+  rebuildSeatMeta();
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${id} added to ${table}`, 'success');
 }
 
 // Smooth pointer-based drag for admin chairs: a clone follows the cursor in real
@@ -1749,8 +1782,14 @@ function renderAdminTeamFilters() {
   const container = document.getElementById('admin-team-filters');
   if (!container) return;
   
-  const activeDepts = new Set(state.employees.map(e => e.department));
-  const filteredOptions = departmentOptions.filter(d => activeDepts.has(d));
+  const activeDepts = new Set([
+    ...state.employees.map(e => getEmployeeTeam(e)),
+    ...state.seats.map(seat => seat.department),
+  ].filter(Boolean));
+  const filteredOptions = [
+    ...departmentOptions.filter(d => activeDepts.has(d)),
+    ...[...activeDepts].filter(d => !departmentOptions.includes(d)).sort(),
+  ];
   
   const activeClassAll = state.adminTeamFilter === '' ? 'active' : '';
   let html = `<button class="dept-btn ${activeClassAll}" data-dept="">All Teams</button>`;
@@ -2015,6 +2054,116 @@ function handleAdminLogout() {
   renderAdminLoginState();
 }
 
+// A person's team: the team of their desk when seated, else their own label.
+function getEmployeeTeam(emp) {
+  const seat = emp.seat ? state.seats.find((s) => s.id === emp.seat) : null;
+  return (seat && seat.department) || emp.department || '';
+}
+
+// Add a person to the selected team (no desk yet) and save to the database.
+async function rosterAddPerson(team, rawName) {
+  const name = rawName.trim().replace(/\s+/g, ' ');
+  if (!name) return;
+  if (state.employees.some((e) => e.name.trim().toLowerCase() === name.toLowerCase())) {
+    showToast(`${name} is already in the list`, 'error');
+    return;
+  }
+  const saved = await addEmployee({
+    name, department: team, seat: null, table: 'No desk', checkIn: getCurrentTime(), wfh: true,
+  });
+  if (!saved || !saved.id) {
+    showToast('Could not save — the database rejected the insert.', 'error');
+    return;
+  }
+  state.employees.push({ ...saved });
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${name} added to ${team}`, 'success');
+}
+
+// Rename a person (and the name shown on their desk) and save to the database.
+async function rosterRenamePerson(employeeId) {
+  const emp = state.employees.find((e) => e.id === employeeId);
+  if (!emp) return;
+  const input = prompt('Rename person:', emp.name);
+  if (input === null) return;
+  const name = input.trim().replace(/\s+/g, ' ');
+  if (!name || name === emp.name) return;
+  if (state.employees.some((e) => e.id !== emp.id && e.name.trim().toLowerCase() === name.toLowerCase())) {
+    showToast(`${name} already exists`, 'error');
+    return;
+  }
+  const result = await updateEmployee(emp.id, { name });
+  if (result && result.ok === false) {
+    showToast('Could not save — the database rejected the change.', 'error');
+    return;
+  }
+  const oldName = emp.name;
+  emp.name = name;
+  const seat = emp.seat ? state.seats.find((x) => x.id === emp.seat) : null;
+  if (seat && seat.occupant) {
+    seat.occupant = { ...seat.occupant, name };
+    await saveSeat(seat);
+  }
+  renderFloorMap(); renderDirectory(); renderAdminSeats(); renderAdminEmployees();
+  showToast(`${oldName} renamed to ${name}`, 'success');
+}
+
+// Left-hand roster for the selected team: every person in it, and whether
+// they have a desk (Yes / No). Hidden when "All Teams" is selected.
+function renderTeamRoster() {
+  const panel = document.getElementById('team-roster');
+  if (!panel) return;
+  const team = state.adminTeamFilter;
+  if (!team) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+  const esc = (v) => String(v).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const people = state.employees
+    .filter((e) => getEmployeeTeam(e) === team)
+    .map((e) => {
+      const seat = e.seat ? state.seats.find((s) => s.id === e.seat) : null;
+      return { id: e.id, name: e.name, seat };
+    })
+    .sort((a, b) => (!a.seat - !b.seat) || a.name.localeCompare(b.name)); // no-desk first
+  const assigned = people.filter((p) => p.seat).length;
+  panel.classList.remove('hidden');
+  panel.innerHTML = `
+    <h4>${esc(team)}</h4>
+    <div class="team-roster-summary">${assigned} of ${people.length} have a seat · ${people.length - assigned} without</div>
+    <form class="team-roster-add" autocomplete="off">
+      <input type="text" placeholder="Add person to ${esc(team)}" required />
+      <button type="submit" class="btn primary small">Add</button>
+    </form>
+    ${people.map((p) => `
+      <div class="team-roster-row${p.seat ? ' has-seat' : ''}" data-id="${p.id}"${p.seat ? ` data-seat="${esc(p.seat.id)}" title="Show ${esc(p.seat.label)} on the layout"` : ''}>
+        <span class="team-roster-name">${esc(p.name)}</span>
+        <span class="team-roster-badge ${p.seat ? 'yes' : 'no'}">${p.seat ? `Seat: Yes · ${esc(p.seat.label)}` : 'Seat: No'}</span>
+        <span class="team-roster-actions">
+          <button type="button" class="roster-edit" title="Rename">✏</button>
+          <button type="button" class="roster-remove" title="Remove">🗑</button>
+        </span>
+      </div>`).join('') || '<div class="team-roster-summary">No people in this team.</div>'}`;
+  panel.querySelector('.team-roster-add').addEventListener('submit', (e) => {
+    e.preventDefault();
+    rosterAddPerson(team, e.target.querySelector('input').value);
+  });
+  panel.querySelectorAll('.roster-edit').forEach((btn) => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    rosterRenamePerson(Number(btn.closest('.team-roster-row').dataset.id));
+  }));
+  panel.querySelectorAll('.roster-remove').forEach((btn) => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeEmployee(Number(btn.closest('.team-roster-row').dataset.id));
+  }));
+  panel.querySelectorAll('.team-roster-row.has-seat').forEach((row) => {
+    row.addEventListener('click', () => {
+      const chair = document.querySelector(`#admin-seat-visual .admin-chair[data-seat="${CSS.escape(row.dataset.seat)}"]`);
+      if (!chair) return;
+      chair.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      chair.classList.add('roster-highlight');
+      setTimeout(() => chair.classList.remove('roster-highlight'), 1800);
+    });
+  });
+}
+
 function renderAdminSeats() {
   const tableBody = document.getElementById('admin-seat-body');
   if (!tableBody) return;
@@ -2053,6 +2202,7 @@ function renderAdminSeats() {
   populateAddSeatFormOptions();
   renderEmployeeNameOptions();
   renderAdminSeatVisual();
+  renderTeamRoster();
 }
 
 // Filters seats by the active team filter + admin search (shared by list & visual).
@@ -2090,7 +2240,7 @@ function renderAdminSeatVisual() {
     const rowLabel = (team) => team ? `<div class="row-team-label">${team}</div>` : '';
     // Pad each row up to 5 with empty drop-slots so people can be dropped into
     // an open position (incl. the other side of the table).
-    const emptySlot = (side) => `<div class="admin-chair empty-slot" data-table="${tableName}" data-side="${side}" title="Empty — drop here"><span class="chair-num">+</span></div>`;
+    const emptySlot = (side) => `<div class="admin-chair empty-slot" data-table="${tableName}" data-side="${side}" title="Empty — click to add a desk, or drop a person here"><span class="chair-num">+</span></div>`;
     const renderRow = (rowSeats, side) => {
       let html = rowSeats.map(chair).join('');
       for (let i = rowSeats.length; i < SEATS_PER_ROW; i++) html += emptySlot(side);
@@ -2114,7 +2264,7 @@ function renderAdminSeatVisual() {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       if (adminDragMoved) { adminDragMoved = false; return; } // this click ended a drag — ignore
-      if (!el.dataset.seat) return; // empty slot — nothing to open
+      if (!el.dataset.seat) { adminAddDeskToSlot(el.dataset.table, el.dataset.side); return; } // empty slot — add a desk
       openAdminSeatPopover(el.dataset.seat, el);
     });
   });

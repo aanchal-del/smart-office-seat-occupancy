@@ -1919,3 +1919,57 @@ input:focus, select:focus {
 }
 .admin-chair.empty-slot:hover { transform: none; box-shadow: none; }
 .admin-chair.empty-slot .chair-num { font-size: 1.1rem; opacity: 0.7; }
+
+/* ── Team roster (left of the seat layout) ───────────── */
+.seat-workspace { display: flex; gap: 18px; align-items: flex-start; }
+.seat-workspace-main { flex: 1; min-width: 0; }
+.team-roster {
+  flex: 0 0 270px;
+  position: sticky;
+  top: 12px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+.team-roster.hidden { display: none; }
+.team-roster h4 { margin: 0 0 4px; font-size: 1rem; }
+.team-roster-summary { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+.team-roster-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 0.88rem;
+}
+.team-roster-row:last-child { border-bottom: none; }
+.team-roster-row.has-seat { cursor: pointer; }
+.team-roster-row.has-seat:hover { background: #f8fafc; }
+.team-roster-name { font-weight: 600; }
+.team-roster-badge {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.team-roster-badge.yes { background: rgba(34, 197, 94, 0.16); color: #15803d; }
+.team-roster-badge.no { background: rgba(239, 68, 68, 0.16); color: #b91c1c; }
+.admin-chair.roster-highlight { outline: 3px solid #2563eb; outline-offset: 2px; }
+@media (max-width: 900px) {
+  .seat-workspace { flex-direction: column; }
+  .team-roster { flex-basis: auto; width: 100%; position: static; max-height: 50vh; }
+}
+
+.team-roster-add { display: flex; gap: 6px; margin-bottom: 10px; }
+.team-roster-add input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
+.team-roster-actions { flex: none; display: flex; gap: 2px; }
+.team-roster-actions button { border: none; background: transparent; cursor: pointer; padding: 2px 4px; border-radius: 6px; font-size: 0.85rem; opacity: 0.6; }
+.team-roster-actions button:hover { opacity: 1; background: #eef2f7; }
+.team-roster-row { flex-wrap: wrap; }
+.team-roster-name { flex: 1 1 100px; min-width: 0; }
