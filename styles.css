@@ -2014,3 +2014,55 @@ input:focus, select:focus {
 .map-seat-popup .popup-delete-seat { display: block; width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 0.74rem;
   background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,.45); border-radius: 6px; cursor: pointer; }
 .map-seat-popup .popup-delete-seat:hover { background: rgba(248,113,113,.12); color: #fca5a5; }
+
+/* ── Responsive / browser-zoom fixes ──────────────────────────
+   Browser zoom narrows the layout width (150% on a 1366px laptop ≈ 910px),
+   so these breakpoints cover zoomed desktops as well as tablets and phones. */
+.floor-map.svg-mode { min-height: 0; }                       /* no blank band under a short map */
+.map-search-container { min-width: 200px; }                  /* search never collapses to a sliver */
+@media (max-width: 1180px) {
+  /* stack "Without a seat" above the map so the map keeps the full width */
+  .map-layout { flex-direction: column; align-items: stretch; }
+  .unseated-panel { flex-basis: auto; width: 100%; position: static; box-sizing: border-box; }
+  .unseated-list { max-height: 220px; }
+}
+@media (max-width: 900px) {
+  .map-layout { align-items: stretch; }
+  /* small screens: keep the map readable and let it scroll sideways inside its card */
+  .floor-map.svg-mode { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .floor-map.svg-mode svg { min-width: 820px; }
+}
+@media (max-width: 600px) {
+  .map-search-container { min-width: 0; width: 100%; max-width: 100%; }
+}
+/* build stamp: hide where it would sit over content */
+@media (max-width: 1180px) { .build-stamp { display: none !important; } }
+@media (max-width: 900px) {
+  /* a tall wrapped header must not stay pinned over the page while scrolling */
+  .topbar { position: static; }
+  .brand { flex-wrap: wrap; row-gap: 2px; }
+  /* menu: one row you can swipe, instead of uneven wrapping */
+  .nav-links { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: thin; }
+  .nav-links .nav-btn { flex: none; white-space: nowrap; }
+}
+@media (max-width: 600px) {
+  .topbar { padding: 14px 16px; }
+  .brand { font-size: 1.15rem; }
+}
+@media (max-width: 600px) {
+  /* map tools: share the row evenly instead of running off the card */
+  .layout-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
+  .layout-actions .btn { min-width: 0; padding-left: 4px; padding-right: 4px; white-space: normal; line-height: 1.2; }
+}
+@media (max-width: 600px) { .layout-actions .btn { height: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; } }
+/* cards and columns shrink to the screen instead of forcing the page wider */
+.admin-seat-visual { grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); }
+.admin-table-card { min-width: 0; max-width: 100%; overflow-x: auto; }
+.directory-groups { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+.directory-group-card { min-width: 0; }
+@media (max-width: 1100px) {
+  /* Admin: menu goes across the top so the seat layout keeps the width */
+  .admin-workspace-layout { flex-direction: column; align-items: stretch; }
+  .admin-sidebar { width: auto; }
+  .admin-sidebar .admin-nav { flex-direction: row; flex-wrap: wrap; }
+}

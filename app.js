@@ -619,6 +619,7 @@ const APP_BUILD = '2026-10-22 · assign v9';
 function showBuildStamp() {
   const el = document.createElement('div');
   el.textContent = `Build ${APP_BUILD}`;
+  el.className = 'build-stamp';
   el.style.cssText = 'position:fixed;left:8px;bottom:6px;z-index:5;font:11px system-ui,sans-serif;color:#64748b;opacity:.75;pointer-events:none;';
   document.body.appendChild(el);
 }
