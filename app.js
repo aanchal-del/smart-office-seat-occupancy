@@ -213,7 +213,10 @@ function rebuildSeatMeta() {
       else if (s.department === teams.bottom && bottom < capBottom) side = 'bottom';
       else if (top < capTop) side = 'top';
       else if (bottom < capBottom) side = 'bottom';
-      else side = top - capTop <= bottom - capBottom ? 'top' : 'bottom'; // more desks than real seats: keep them visible past the row end
+      // more desks than real seats: keep them on their team's row, visible past the row end
+      else if (teams.top !== teams.bottom && s.department === teams.bottom) side = 'bottom';
+      else if (teams.top !== teams.bottom && s.department === teams.top) side = 'top';
+      else side = top - capTop <= bottom - capBottom ? 'top' : 'bottom';
       const sideIndex = side === 'top' ? top++ : bottom++;
       seatMeta[s.id] = { table, department: s.department, side, sideIndex };
     });
@@ -1210,6 +1213,25 @@ function renderFloorMap() {
         });
         desksGroup.appendChild(slot);
       }
+      // Row already at (or past) its real size: offer one extra seat after the last desk.
+      if (count[side] > 0 && count[side] >= rowCap(tableName, side)) {
+        const x = rowX(L.cx, tableName, side, count[side]);
+        const y = side === 'top' ? L.topY : L.bottomY;
+        const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        slot.setAttribute('class', 'map-empty-slot map-extra-slot');
+        slot.setAttribute('data-table', tableName);
+        slot.setAttribute('data-side', side);
+        slot.style.cursor = 'pointer';
+        slot.innerHTML = `<title>Add an extra seat to this row</title>
+          <circle cx="${x}" cy="${y}" r="11" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3,3"></circle>
+          <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="16" font-weight="700" fill="#2563eb" style="pointer-events:none">+</text>`;
+        slot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (mapDragMoved) { mapDragMoved = false; return; }
+          adminAddDeskToSlot(tableName, side, true);
+        });
+        desksGroup.appendChild(slot);
+      }
     });
   });
   viewport.appendChild(desksGroup);
@@ -1827,12 +1849,11 @@ async function adminDropOnEmptySlot(sourceSeatId, table, side) {
 }
 
 // Click on an empty "+" slot: add a new free desk at the end of that row.
-async function adminAddDeskToSlot(table, side) {
+async function adminAddDeskToSlot(table, side, extra = false) {
   const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
-  if (sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table)) {
-    showToast('That row is full.', 'error');
-    return;
-  }
+  const full = sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table);
+  if (full && !extra) { showToast('That row is full — use the blue “+” at the end of the row to add an extra seat.', 'error'); return; }
+  if (full && !(await uiConfirm(`${table} has ${tableCap(table)} real seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).\nAdd an extra seat to the ${side} row anyway?`, 'Add seat'))) return;
   const id = getNextDeskLabel();
   const cfg = tableConfig.find((t) => t.table === table);
   const cfgSide = cfg && cfg.sides[side === 'top' ? 0 : 1];
@@ -2580,10 +2601,8 @@ async function handleSeatAdd(event) {
     return;
   }
   const tableCount = state.seats.filter((s) => s.table === table).length;
-  if (tableCount >= tableCap(table)) {
-    showToast(`${table} is full — ${tableCap(table)} seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).`, 'error');
-    return;
-  }
+  if (tableCount >= tableCap(table)
+      && !(await uiConfirm(`${table} has ${tableCap(table)} real seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).\nAdd an extra seat anyway?`, 'Add seat'))) return;
   const seat = { id: label, label, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
   const saved = await createSeat(seat);
   state.seats.push({ ...seat, ...saved });
@@ -2841,6 +2860,8 @@ function renderAdminSeatVisual() {
       // only offer "+" where a new desk really lands on this row
       if (rowSeats.length === 0 && otherCount < rowCap(tableName, side === 'top' ? 'bottom' : 'top')) return html;
       for (let i = rowSeats.length; i < rowCap(tableName, side); i++) html += emptySlot(side);
+      if (rowSeats.length >= rowCap(tableName, side))
+        html += `<div class="admin-chair empty-slot extra-slot" data-table="${tableName}" data-side="${side}" data-extra="1" title="Add an extra seat to this row"><span class="chair-num">+</span></div>`;
       return html;
     };
     return `
@@ -2861,7 +2882,7 @@ function renderAdminSeatVisual() {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       if (adminDragMoved) { adminDragMoved = false; return; } // this click ended a drag — ignore
-      if (!el.dataset.seat) { adminAddDeskToSlot(el.dataset.table, el.dataset.side); return; } // empty slot — add a desk
+      if (!el.dataset.seat) { adminAddDeskToSlot(el.dataset.table, el.dataset.side, el.dataset.extra === '1'); return; } // empty slot — add a desk
       openAdminSeatPopover(el.dataset.seat, el);
     });
   });

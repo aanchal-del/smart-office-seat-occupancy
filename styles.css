@@ -2003,3 +2003,8 @@ input:focus, select:focus {
   .map-layout { flex-direction: column; }
   .unseated-panel { flex-basis: auto; width: 100%; position: static; box-sizing: border-box; }
 }
+
+/* "+" after a full row: add an extra seat beyond the table's real count */
+.admin-chair.empty-slot.extra-slot { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+.admin-chair.empty-slot.extra-slot .chair-num { opacity: 1; font-weight: 700; }
+.map-extra-slot:hover circle { fill: #dbeafe; }
