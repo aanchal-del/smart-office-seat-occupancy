@@ -260,6 +260,7 @@ function getTeamOptions() {
 function uiDialog({ message, withInput = false, defaultValue = '', okLabel = 'OK', cancelLabel = 'Cancel' }) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
+    overlay.dataset.uiDialog = '1';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;';
     const box = document.createElement('div');
     box.style.cssText = 'background:#fff;color:#0f172a;border-radius:14px;padding:20px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);font:14px system-ui,sans-serif;';
@@ -385,7 +386,15 @@ function sortSeats(seats) {
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────────
-async function loadFromServer() {
+// True while the user is mid-action (dragging, typing in a popup, in a dialog, or a save
+// is still on its way) — background refreshes must not redraw or overwrite state then.
+let pendingOps = 0;
+function isUserBusy() {
+  return !!((mapDrag && mapDrag.started) || pendingOps > 0
+    || document.querySelector('.map-seat-popup') || document.querySelector('[data-ui-dialog]'));
+}
+
+async function loadFromServer(opts = {}) {
   if (!_supabase) { initSeats(); if (!state.meetingRooms.length) state.meetingRooms = defaultMeetingRooms.map(r => ({ ...r })); return false; }
   try {
     const dbTimeout = new Promise((_, reject) =>
@@ -401,6 +410,7 @@ async function loadFromServer() {
     ]);
     if (seatsErr || empsErr) throw new Error(seatsErr?.message || empsErr?.message);
     if (!seats?.length || !emps?.length) throw new Error('DB tables empty — run supabase-schema.sql');
+    if (opts.background && isUserBusy()) return false; // the user started something while this loaded — keep their state
     state.seats = sortSeats(seats);
     rebuildSeatMeta();
     state.employees = emps.map((emp) => ({ wfh: emp.wfh || false, ...emp }));
@@ -409,6 +419,7 @@ async function loadFromServer() {
     return true;
   } catch (err) {
     console.warn('Supabase unavailable — using local fallback data:', err.message);
+    if (opts.background && state.seats.length) return false; // a failed background refresh must not wipe loaded data
     initSeats();
     if (!state.meetingRooms.length) state.meetingRooms = defaultMeetingRooms.map(r => ({ ...r }));
     return false;
@@ -475,7 +486,7 @@ window.addEventListener('error', (e) => { try { showToast('Error: ' + (e.message
 window.addEventListener('unhandledrejection', (e) => { try { showToast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 'error'); } catch (_) {} });
 
 // Tiny corner label so it is obvious which copy of the app a browser is running.
-const APP_BUILD = '2026-10-22 · assign v5';
+const APP_BUILD = '2026-10-22 · assign v6';
 function showBuildStamp() {
   const el = document.createElement('div');
   el.textContent = `Build ${APP_BUILD}`;
@@ -1380,12 +1391,32 @@ async function placeEmployeeOnSeat(emp, seat) {
   }
   showToast(`${emp.name} assigned to ${seat.label}`, 'success');
 
-  const results = await Promise.all([
-    oldSeat ? saveSeat(oldSeat) : Promise.resolve(),
-    updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh }),
-    saveSeat(seat),
-  ]);
-  if (results.some((r) => r && r.ok === false)) showToast('Saved on screen, but the database rejected the change.', 'error');
+  pendingOps++;
+  try {
+    const isNew = emp.id == null;
+    const empSave = isNew
+      ? addEmployee({ name: emp.name, department: emp.department, seat: seat.id, table: seat.table, checkIn: emp.checkIn, wfh: false })
+          .then((saved) => { if (saved && saved.id) { emp.id = saved.id; return { ok: true }; } return { ok: false }; })
+      : updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh });
+    const results = await Promise.all([
+      oldSeat ? saveSeat(oldSeat) : Promise.resolve(),
+      empSave,
+      saveSeat(seat),
+    ]);
+    if (results.some((r) => r && r.ok === false)) {
+      if (isNew && emp.id == null) {
+        // the new person could not be saved: undo what was shown
+        state.employees = state.employees.filter((e) => e !== emp);
+        seat.status = 'free'; seat.occupant = null;
+        await saveSeat(seat);
+        renderFloorMap(); renderDirectory();
+        if (state.adminLoggedIn) { renderAdminSeats(); renderAdminEmployees(); }
+        showToast(`Could not save ${emp.name} — the database rejected it, so it was undone.`, 'error');
+      } else {
+        showToast('Saved on screen, but the database rejected the change.', 'error');
+      }
+    }
+  } finally { pendingOps--; }
 }
 
 async function assignSeatFromPopup(seatId) {
@@ -1400,12 +1431,8 @@ async function assignSeatFromPopup(seatId) {
   if (!emp) {
     // not in the list: add them as a new person at this desk
     if (!(await uiConfirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`, 'Add person'))) return;
-    const saved = await addEmployee({
-      name: raw, department: seat.department, seat: null, table: seat.table,
-      checkIn: getCurrentTime(), wfh: false,
-    });
-    if (!saved || !saved.id) { showToast('Could not save — the database rejected the insert.', 'error'); return; }
-    emp = { ...saved };
+    // shown straight away; it is saved to the database in the background
+    emp = { id: null, name: raw, department: seat.department, seat: null, table: seat.table, checkIn: getCurrentTime(), wfh: false };
     state.employees.push(emp);
   }
   await placeEmployeeOnSeat(emp, seat);
@@ -2905,19 +2932,23 @@ function renderAdminEmployees() {
 }
 
 // ── Auto-refresh: re-fetches live data from API every 10 s ───────────────────
+async function autoRefreshTick() {
+  if (isUserBusy()) return; // don't redraw the map under a drag, a popup, a dialog or an unsaved change
+  const loaded = await loadFromServer({ background: true });
+  if (!loaded || isUserBusy()) return; // failed, or the user started something while it loaded
+  await checkExpiredVisitors();
+  await checkExpiredRooms();
+  if (isUserBusy()) return;
+  renderFloorMap();
+  renderDirectory();
+  renderRooms();
+  if (state.adminLoggedIn) { renderAdminSeats(); renderAdminEmployees(); }
+}
+window.autoRefreshTick = autoRefreshTick;
+
 function startAutoRefresh() {
   if (state.refreshIntervalId) clearInterval(state.refreshIntervalId);
-  state.refreshIntervalId = setInterval(async () => {
-    if (mapDrag && mapDrag.started) return; // don't redraw the map under a drag
-    if (document.querySelector('.map-seat-popup')) return; // nor wipe a popup someone is typing in
-    await loadFromServer();
-    await checkExpiredVisitors();
-    await checkExpiredRooms();
-    renderFloorMap();
-    renderDirectory();
-    renderRooms();
-    if (state.adminLoggedIn) { renderAdminSeats(); renderAdminEmployees(); }
-  }, 10000);
+  state.refreshIntervalId = setInterval(autoRefreshTick, 10000);
 }
 
 function getCurrentTime() {
