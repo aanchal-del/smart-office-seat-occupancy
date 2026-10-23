@@ -866,7 +866,7 @@ function getViewWidth() {
   seatTableGroups.forEach((t) => {
     const L = tableLayout(t);
     if (!L) return;
-    ['top', 'bottom'].forEach((side) => { w = Math.max(w, rowX(L.cx, t, side, rowLen(t, side)) + 100); });
+    ['top', 'bottom'].forEach((side) => { w = Math.max(w, rowX(L.cx, t, side, rowLen(t, side) - 1) + 120, L.cx + tableWidth(t) / 2 + 110); });
   });
   return Math.ceil(w);
 }
@@ -1252,16 +1252,17 @@ function renderFloorMap() {
       }
       // A full row gets one quiet "+" in line after its last desk, to add an extra seat.
       if (count[side] > 0 && count[side] >= rowCap(tableName, side)) {
-        const x = rowX(L.cx, tableName, side, rowLen(tableName, side));
-        const y = side === 'top' ? L.topY : L.bottomY;
+        // right at the end of the table bar, level with this row's desks
+        const x = L.cx + tableWidth(tableName) / 2 + 18;
+        const y = side === 'top' ? L.topY + 25 : L.bottomY - 25;
         const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         slot.setAttribute('class', 'map-empty-slot map-add-seat');
         slot.setAttribute('data-table', tableName);
         slot.setAttribute('data-side', side);
         slot.style.cursor = 'pointer';
         slot.innerHTML = `<title>Add a seat to this row</title>
-          <circle cx="${x}" cy="${y}" r="10" fill="rgba(255,255,255,0.6)" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3,3"></circle>
-          <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="15" fill="#94a3b8" style="pointer-events:none">+</text>`;
+          <circle cx="${x}" cy="${y}" r="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,2"></circle>
+          <text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b" style="pointer-events:none">+</text>`;
         slot.addEventListener('click', (e) => {
           e.stopPropagation();
           if (mapDragMoved) { mapDragMoved = false; return; }
