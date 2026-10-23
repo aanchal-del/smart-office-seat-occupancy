@@ -174,7 +174,14 @@ function rowCap(table, side) {
 }
 const tableCap = (table) => rowCap(table, 'top') + rowCap(table, 'bottom');
 // x of position k in a row, with the row centred on the table at its real size
-const rowX = (cx, table, side, k) => cx - ((rowCap(table, side) - 1) / 2) * SEAT_GAP + k * SEAT_GAP;
+// Desks actually drawn per row (filled in by rebuildSeatMeta). A row is as long as
+// its real size, or longer if it holds extra desks.
+const rowLens = {};
+const rowLen = (table, side) => Math.max(rowCap(table, side), (rowLens[table] || {})[side] || 0);
+// x of position k in a row, with the row centred on the table
+const rowX = (cx, table, side, k) => cx - ((rowLen(table, side) - 1) / 2) * SEAT_GAP + k * SEAT_GAP;
+// table bar spans the longer of its two rows
+const tableWidth = (table) => (Math.max(rowLen(table, 'top'), rowLen(table, 'bottom'), 2) - 1) * SEAT_GAP + 64;
 
 // Re-derive seatMeta (which row/side each desk sits on) from the ACTUAL seats in
 // state, so dynamically-added desks get placed correctly. Rule: a desk prefers
@@ -182,6 +189,7 @@ const rowX = (cx, table, side, k) => cx - ((rowCap(table, side) - 1) / 2) * SEAT
 function rebuildSeatMeta() {
   recomputeTableGroups();
   for (const k in seatMeta) delete seatMeta[k];
+  for (const k in rowLens) delete rowLens[k];
   const deskNum = (id) => { const n = parseInt(String(id).replace(/\D/g, ''), 10); return Number.isNaN(n) ? 0 : n; };
 
   // Preferred team for each side, from the table layout config.
@@ -219,6 +227,8 @@ function rebuildSeatMeta() {
       else side = top - capTop <= bottom - capBottom ? 'top' : 'bottom';
       const sideIndex = side === 'top' ? top++ : bottom++;
       seatMeta[s.id] = { table, department: s.department, side, sideIndex };
+      const rl = rowLens[table] = rowLens[table] || { top: 0, bottom: 0 };
+      rl[side] = Math.max(rl[side], sideIndex + 1);
     });
   });
 }
@@ -1004,7 +1014,7 @@ function renderFloorMap() {
       dept: teams.join(' / '),
       xCenter: L.cx,
       yCenter: (L.topY + L.bottomY) / 2,
-      width: 4 * SEAT_GAP + 64, // span the row of seats
+      width: tableWidth(name),
     };
   });
 
