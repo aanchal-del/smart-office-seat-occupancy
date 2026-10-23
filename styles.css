@@ -2007,4 +2007,3 @@ input:focus, select:focus {
 /* "+" after a full row: add an extra seat beyond the table's real count */
 .admin-chair.empty-slot.extra-slot { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .admin-chair.empty-slot.extra-slot .chair-num { opacity: 1; font-weight: 700; }
-.map-extra-slot:hover circle { fill: #dbeafe; }

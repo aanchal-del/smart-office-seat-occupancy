@@ -358,7 +358,7 @@ function uiRenameTable(tableName, teams) {
       return input;
     };
     const title = document.createElement('div');
-    title.textContent = `Rename ${tableName}`;
+    title.textContent = tableName;
     title.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:14px;';
     box.appendChild(title);
     const tableInput = field('Table name', tableName);
@@ -378,6 +378,16 @@ function uiRenameTable(tableName, teams) {
       b.style.cssText = `padding:7px 14px;border-radius:8px;border:1px solid ${primary ? '#4f46e5' : '#cbd5e1'};background:${primary ? '#4f46e5' : '#fff'};color:${primary ? '#fff' : '#0f172a'};cursor:pointer;font-size:14px;`;
       return b;
     };
+    const seatRow = document.createElement('div');
+    seatRow.style.cssText = 'display:flex;gap:8px;margin:0 0 14px;padding-top:12px;border-top:1px solid #e2e8f0;';
+    ['top', 'bottom'].forEach((side) => {
+      const b = mk(`+ Seat on ${side} row`, false);
+      b.style.flex = '1'; b.style.color = '#2563eb'; b.style.borderColor = '#93c5fd';
+      b.title = `${rowCap(tableName, side)} real seats on this row`;
+      b.addEventListener('click', () => done({ addSeat: side }));
+      seatRow.appendChild(b);
+    });
+    box.appendChild(seatRow);
     const cancel = mk('Cancel', false), ok = mk('Save', true);
     row.appendChild(cancel); row.appendChild(ok); box.appendChild(row);
     overlay.appendChild(box); document.body.appendChild(overlay);
@@ -404,6 +414,7 @@ async function renameTableFromMap(oldTable) {
   const teams = [...new Set(state.seats.filter((s) => s.table === oldTable).map((s) => s.department).filter(Boolean))];
   const res = await uiRenameTable(oldTable, teams);
   if (!res) return;
+  if (res.addSeat) return adminAddDeskToSlot(oldTable, res.addSeat, true);
   for (const [oldTeam, newTeam] of Object.entries(res.teams)) await renameTeamInTable(oldTable, oldTeam, newTeam);
   if (res.table !== oldTable) await renameTable(oldTable, res.table);
 }
@@ -823,7 +834,7 @@ function switchView(view) {
 //   Production on top, then Table 1·2·3 in a row, Table 4 under Table 2,
 //   Tables 5 & 6 stacked under Table 3.
 const VIEW_W = 1560;
-const VIEW_H = 1160;
+const VIEW_H = 1220;
 const TABLE_POSITIONS = [
   { cx: 300,  topY: 400,  bottomY: 500 },   // index 0 → Table 1  (left column, row 1)
   { cx: 300,  topY: 680,  bottomY: 780 },   // index 1 → Table 2  (left column, row 2)
@@ -1033,7 +1044,7 @@ function renderFloorMap() {
     tableRect.setAttribute('data-table', table.id);
     tableRect.style.cursor = 'pointer';
     const rectTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-    rectTitle.textContent = `${table.id} — click to rename`;
+    rectTitle.textContent = `${table.id} — click to rename or add a seat`;
     tableRect.appendChild(rectTitle);
     tableRect.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1175,7 +1186,11 @@ function renderFloorMap() {
       nameText.setAttribute('font-size', '11');
       nameText.setAttribute('font-weight', '600');
       nameText.setAttribute('fill', '#1e293b');
-      nameText.setAttribute('y', (dir === 'top' ? y - 30 : y + 28).toString());
+      nameText.setAttribute('stroke', '#f8fafc');
+      nameText.setAttribute('stroke-width', '3');
+      nameText.setAttribute('stroke-linejoin', 'round');
+      nameText.setAttribute('paint-order', 'stroke');
+      nameText.setAttribute('y', (dir === 'top' ? y - (line2 ? 44 : 32) : y + 30).toString());
       const t1 = document.createElementNS(SVG_NS, 'tspan');
       t1.setAttribute('x', x.toString());
       t1.textContent = line1;
@@ -1220,25 +1235,6 @@ function renderFloorMap() {
           e.stopPropagation();
           if (mapDragMoved) { mapDragMoved = false; return; }
           adminAddDeskToSlot(tableName, side);
-        });
-        desksGroup.appendChild(slot);
-      }
-      // Row already at (or past) its real size: offer one extra seat after the last desk.
-      if (count[side] > 0 && count[side] >= rowCap(tableName, side)) {
-        const x = rowX(L.cx, tableName, side, count[side]);
-        const y = side === 'top' ? L.topY : L.bottomY;
-        const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        slot.setAttribute('class', 'map-empty-slot map-extra-slot');
-        slot.setAttribute('data-table', tableName);
-        slot.setAttribute('data-side', side);
-        slot.style.cursor = 'pointer';
-        slot.innerHTML = `<title>Add an extra seat to this row</title>
-          <circle cx="${x}" cy="${y}" r="11" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3,3"></circle>
-          <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="16" font-weight="700" fill="#2563eb" style="pointer-events:none">+</text>`;
-        slot.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (mapDragMoved) { mapDragMoved = false; return; }
-          adminAddDeskToSlot(tableName, side, true);
         });
         desksGroup.appendChild(slot);
       }
@@ -1862,7 +1858,7 @@ async function adminDropOnEmptySlot(sourceSeatId, table, side) {
 async function adminAddDeskToSlot(table, side, extra = false) {
   const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
   const full = sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table);
-  if (full && !extra) { showToast('That row is full — use the blue “+” at the end of the row to add an extra seat.', 'error'); return; }
+  if (full && !extra) { showToast('That row is full — click the table to add an extra seat.', 'error'); return; }
   if (full && !(await uiConfirm(`${table} has ${tableCap(table)} real seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).\nAdd an extra seat to the ${side} row anyway?`, 'Add seat'))) return;
   const id = getNextDeskLabel();
   const cfg = tableConfig.find((t) => t.table === table);
