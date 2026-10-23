@@ -2007,3 +2007,6 @@ input:focus, select:focus {
 /* "+" after a full row: add an extra seat beyond the table's real count */
 .admin-chair.empty-slot.extra-slot { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .admin-chair.empty-slot.extra-slot .chair-num { opacity: 1; font-weight: 700; }
+/* "+" after a full row on the map: quiet until hovered */
+.map-add-seat:hover circle { stroke: #2563eb; fill: #eff6ff; }
+.map-add-seat:hover text { fill: #2563eb; }

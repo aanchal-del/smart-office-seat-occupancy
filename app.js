@@ -860,6 +860,17 @@ function tableLayout(tableName) {
 }
 
 // Canvas height: the sketch's height, or taller if extra tables were added.
+// Canvas width: wide enough for every row plus its "+" add-seat spot.
+function getViewWidth() {
+  let w = VIEW_W;
+  seatTableGroups.forEach((t) => {
+    const L = tableLayout(t);
+    if (!L) return;
+    ['top', 'bottom'].forEach((side) => { w = Math.max(w, rowX(L.cx, t, side, rowLen(t, side)) + 100); });
+  });
+  return Math.ceil(w);
+}
+
 function getViewHeight() {
   let h = VIEW_H;
   seatTableGroups.forEach((t) => { const L = tableLayout(t); if (L) h = Math.max(h, L.bottomY + 100); });
@@ -937,7 +948,8 @@ function renderFloorMap() {
   // Create SVG element
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
-  svg.setAttribute('viewBox', `0 0 ${VIEW_W} ${viewH}`);
+  const viewW = getViewWidth();
+  svg.setAttribute('viewBox', `0 0 ${viewW} ${viewH}`);
   svg.style.cursor = state.isDraggingMap ? 'grabbing' : 'grab';
   svg.style.userSelect = 'none';
 
@@ -980,14 +992,14 @@ function renderFloorMap() {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', '50');
       line.setAttribute('y1', y.toString());
-      line.setAttribute('x2', (VIEW_W - 50).toString());
+      line.setAttribute('x2', (viewW - 50).toString());
       line.setAttribute('y2', y.toString());
       line.setAttribute('stroke', '#cbd5e1');
       line.setAttribute('stroke-width', '1');
       line.setAttribute('stroke-dasharray', '4,4');
       gridGroup.appendChild(line);
     }
-    for (let x = 50; x <= VIEW_W - 50; x += 200) {
+    for (let x = 50; x <= viewW - 50; x += 200) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', x.toString());
       line.setAttribute('y1', '50');
@@ -1005,7 +1017,7 @@ function renderFloorMap() {
   const outerWall = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   outerWall.setAttribute('x', '50');
   outerWall.setAttribute('y', '50');
-  outerWall.setAttribute('width', (VIEW_W - 100).toString());
+  outerWall.setAttribute('width', (viewW - 100).toString());
   outerWall.setAttribute('height', (viewH - 100).toString());
   outerWall.setAttribute('fill', 'none');
   outerWall.setAttribute('stroke', '#475569');
@@ -1235,6 +1247,25 @@ function renderFloorMap() {
           e.stopPropagation();
           if (mapDragMoved) { mapDragMoved = false; return; }
           adminAddDeskToSlot(tableName, side);
+        });
+        desksGroup.appendChild(slot);
+      }
+      // A full row gets one quiet "+" in line after its last desk, to add an extra seat.
+      if (count[side] > 0 && count[side] >= rowCap(tableName, side)) {
+        const x = rowX(L.cx, tableName, side, rowLen(tableName, side));
+        const y = side === 'top' ? L.topY : L.bottomY;
+        const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        slot.setAttribute('class', 'map-empty-slot map-add-seat');
+        slot.setAttribute('data-table', tableName);
+        slot.setAttribute('data-side', side);
+        slot.style.cursor = 'pointer';
+        slot.innerHTML = `<title>Add a seat to this row</title>
+          <circle cx="${x}" cy="${y}" r="10" fill="rgba(255,255,255,0.6)" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3,3"></circle>
+          <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="15" fill="#94a3b8" style="pointer-events:none">+</text>`;
+        slot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (mapDragMoved) { mapDragMoved = false; return; }
+          adminAddDeskToSlot(tableName, side, true);
         });
         desksGroup.appendChild(slot);
       }
@@ -1858,7 +1889,7 @@ async function adminDropOnEmptySlot(sourceSeatId, table, side) {
 async function adminAddDeskToSlot(table, side, extra = false) {
   const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
   const full = sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table);
-  if (full && !extra) { showToast('That row is full — click the table to add an extra seat.', 'error'); return; }
+  if (full && !extra) { showToast('That row is full — use the “+” at the end of the row to add an extra seat.', 'error'); return; }
   if (full && !(await uiConfirm(`${table} has ${tableCap(table)} real seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).\nAdd an extra seat to the ${side} row anyway?`, 'Add seat'))) return;
   const id = getNextDeskLabel();
   const cfg = tableConfig.find((t) => t.table === table);
