@@ -307,6 +307,77 @@ function uiDialog({ message, withInput = false, defaultValue = '', okLabel = 'OK
   });
 }
 const uiConfirm = (message, okLabel = 'OK') => uiDialog({ message, okLabel });
+
+// Rename a table and/or the teams sitting at it. Resolves to { table, teams: {old: new} } or null.
+function uiRenameTable(tableName, teams) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.dataset.uiDialog = '1';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;color:#0f172a;border-radius:14px;padding:20px;max-width:400px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);font:14px system-ui,sans-serif;';
+    const field = (label, value) => {
+      const wrap = document.createElement('label');
+      wrap.style.cssText = 'display:block;margin-bottom:12px;';
+      const t = document.createElement('div');
+      t.textContent = label;
+      t.style.cssText = 'font-size:12.5px;font-weight:600;color:#475569;margin-bottom:5px;';
+      const input = document.createElement('input');
+      input.type = 'text'; input.value = value; input.maxLength = 60;
+      input.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;';
+      wrap.appendChild(t); wrap.appendChild(input); box.appendChild(wrap);
+      return input;
+    };
+    const title = document.createElement('div');
+    title.textContent = `Rename ${tableName}`;
+    title.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:14px;';
+    box.appendChild(title);
+    const tableInput = field('Table name', tableName);
+    const teamInputs = teams.map((team, i) => [team, field(teams.length > 1 ? `Team ${i + 1} at this table` : 'Team at this table', team)]);
+    const note = document.createElement('div');
+    note.textContent = 'Team names change only for the desks at this table.';
+    note.style.cssText = 'font-size:12px;color:#64748b;margin:-4px 0 14px;';
+    if (teams.length) box.appendChild(note);
+    const err = document.createElement('div');
+    err.style.cssText = 'font-size:12.5px;color:#dc2626;margin:-6px 0 10px;display:none;';
+    box.appendChild(err);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+    const mk = (label, primary) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label;
+      b.style.cssText = `padding:7px 14px;border-radius:8px;border:1px solid ${primary ? '#4f46e5' : '#cbd5e1'};background:${primary ? '#4f46e5' : '#fff'};color:${primary ? '#fff' : '#0f172a'};cursor:pointer;font-size:14px;`;
+      return b;
+    };
+    const cancel = mk('Cancel', false), ok = mk('Save', true);
+    row.appendChild(cancel); row.appendChild(ok); box.appendChild(row);
+    overlay.appendChild(box); document.body.appendChild(overlay);
+    tableInput.focus(); tableInput.select();
+    const done = (v) => { overlay.remove(); resolve(v); };
+    const submit = () => {
+      const table = tableInput.value.trim();
+      if (!table) { err.textContent = 'The table needs a name.'; err.style.display = 'block'; return; }
+      if (table !== tableName && seatTableGroups.includes(table)) { err.textContent = `“${table}” is already used by another table.`; err.style.display = 'block'; return; }
+      const renames = {};
+      for (const [old, input] of teamInputs) { const v = input.value.trim(); if (v && v !== old) renames[old] = v; }
+      done({ table, teams: renames });
+    };
+    ok.addEventListener('click', submit);
+    cancel.addEventListener('click', () => done(null));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(null); });
+    box.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') done(null); });
+  });
+}
+
+// Click a table on the map → rename it and/or its teams, using the same rename
+// functions as the Admin Panel (they also update each person's record).
+async function renameTableFromMap(oldTable) {
+  const teams = [...new Set(state.seats.filter((s) => s.table === oldTable).map((s) => s.department).filter(Boolean))];
+  const res = await uiRenameTable(oldTable, teams);
+  if (!res) return;
+  for (const [oldTeam, newTeam] of Object.entries(res.teams)) await renameTeamInTable(oldTable, oldTeam, newTeam);
+  if (res.table !== oldTable) await renameTable(oldTable, res.table);
+}
 const uiPrompt = (message, defaultValue = '') => uiDialog({ message, withInput: true, defaultValue });
 
 // Ask for a new team name; returns the (existing or new) team, or null.
@@ -932,6 +1003,15 @@ function renderFloorMap() {
     tableRect.setAttribute('filter', 'url(#shadow)');
     tableRect.setAttribute('class', 'map-table-drop');
     tableRect.setAttribute('data-table', table.id);
+    tableRect.style.cursor = 'pointer';
+    const rectTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    rectTitle.textContent = `${table.id} — click to rename`;
+    tableRect.appendChild(rectTitle);
+    tableRect.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mapDragMoved) { mapDragMoved = false; return; }
+      renameTableFromMap(table.id);
+    });
     tablesGroup.appendChild(tableRect);
 
     const tableText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
