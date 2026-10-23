@@ -90,7 +90,17 @@
           <div class="refresh-note">Auto-refresh every 10 seconds</div>
         </section>
 
-        <section class="floor-map" id="floor-map"></section>
+        <div class="map-layout">
+          <aside class="unseated-panel" id="unseated-panel">
+            <details open>
+              <summary>Without a seat <span class="unseated-count" id="unseated-count">0</span></summary>
+              <input id="unseated-search" type="search" placeholder="Search name…" autocomplete="off" />
+              <div class="unseated-hint">Drag a name onto a free desk, or click a name and then a free desk.</div>
+              <div id="unseated-list" class="unseated-list"></div>
+            </details>
+          </aside>
+          <section class="floor-map" id="floor-map"></section>
+        </div>
       </section>
 
       <section id="panel-directory" class="panel">

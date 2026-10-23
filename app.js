@@ -18,6 +18,7 @@ const state = {
   employees: [],
   adminLoggedIn: true, // no login: the admin panel is always open
   adminSearchQuery: '',
+  armedEmployeeId: null,
   extraTeams: [],
   meetingRooms: [],
   refreshIntervalId: null,
@@ -503,7 +504,7 @@ window.addEventListener('error', (e) => { debugLog('JS ERROR: ' + e.message); tr
 window.addEventListener('unhandledrejection', (e) => { debugLog('PROMISE ERROR: ' + ((e.reason && e.reason.message) || e.reason)); try { showToast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 'error'); } catch (_) {} });
 
 // Tiny corner label so it is obvious which copy of the app a browser is running.
-const APP_BUILD = '2026-10-22 · assign v8';
+const APP_BUILD = '2026-10-22 · assign v9';
 function showBuildStamp() {
   const el = document.createElement('div');
   el.textContent = `Build ${APP_BUILD}`;
@@ -592,6 +593,7 @@ function bindUIActions() {
   document.getElementById('view-requirements').addEventListener('click', () => switchView('requirements'));
   document.getElementById('view-rooms').addEventListener('click', () => { switchView('rooms'); renderRooms(); });
   document.getElementById('directory-search').addEventListener('input', renderDirectory);
+  document.getElementById('unseated-search').addEventListener('input', renderUnseatedList);
   document.getElementById('map-search').addEventListener('input', (event) => {
     state.searchQuery = event.target.value;
     renderFloorMap();
@@ -976,7 +978,7 @@ function renderFloorMap() {
     }
 
     const seatNode = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    seatNode.setAttribute('class', `seat-node ${seat.status}${filteredOut ? ' filtered-out' : ''}${matchesSearch ? ' search-match' : ''}`);
+    seatNode.setAttribute('class', `seat-node ${seat.status}${filteredOut ? ' filtered-out' : ''}${matchesSearch ? ' search-match' : ''}${state.armedEmployeeId != null && seat.status === 'free' ? ' armed-target' : ''}`);
     seatNode.setAttribute('data-seat-id', seat.id);
     seatNode.setAttribute('filter', 'url(#seatShadow)');
     seatNode.style.cursor = 'grab';
@@ -1250,6 +1252,7 @@ async function onMapSeatDragEnd(e) {
 // ── Interactive SVG Map Tooltips and Click Handlers ─────────────────────────
 function handleSeatClick(seatId) {
   debugLog(`seat click ${seatId}`);
+  { const armedSeat = state.seats.find(x => x.id === seatId); if (armedSeat && seatArmedEmployee(armedSeat)) return; }
   // Remove existing popups
   document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
 
@@ -1551,19 +1554,8 @@ async function handleSeatDrop(event, targetSeatId) {
     if (data.type === 'employee') {
       if (targetSeat.status !== 'free') return;
       const emp = state.employees.find(e => e.id === data.id);
-      if (emp) {
-        if (emp.seat) {
-          const oldSeat = state.seats.find(s => s.id === emp.seat);
-          if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; await saveSeat(oldSeat); }
-        }
-        emp.seat = targetSeatId;
-        emp.table = targetSeat.table;
-        emp.wfh = false;
-        targetSeat.status = 'occupied';
-        targetSeat.occupant = { name: emp.name, department: emp.department };
-        await updateEmployee(emp.id, { seat: emp.seat, table: emp.table, wfh: emp.wfh });
-        await saveSeat(targetSeat);
-      }
+      if (emp) await placeEmployeeOnSeat(emp, targetSeat);
+      return;
     } else if (data.type === 'seat') {
       const sourceSeatId = data.id;
       if (sourceSeatId === targetSeatId) return;
@@ -1892,6 +1884,7 @@ function handleChairClick(event) {
   if (!chair) { document.querySelectorAll('.chair-popup').forEach((p) => p.remove()); return; }
   const seat = state.seats.find((s) => s.id === chair.dataset.seatId);
   if (!seat) return;
+  if (seatArmedEmployee(seat)) return;
   const hadPopup = !!chair.querySelector('.chair-popup');
   document.querySelectorAll('.chair-popup').forEach((p) => p.remove());
   if (hadPopup) return;
@@ -1953,6 +1946,55 @@ function renderDirectoryTableFilterOptions() {
     `<option value="">All tables</option>${seatTableGroups.map((t) => `<option value="${t}">${t}</option>`).join('')}`;
 }
 
+// Left-hand "Without a seat" list on the home page: people whose name is not on any desk.
+function renderUnseatedList() {
+  const list = document.getElementById('unseated-list');
+  if (!list) return;
+  const onDesk = new Set(state.seats.filter((s) => s.status === 'occupied' && s.occupant && s.occupant.name)
+    .map((s) => s.occupant.name.trim().toLowerCase()));
+  const all = state.employees
+    .filter((e) => e.name !== 'Guest User' && !onDesk.has(e.name.trim().toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const q = (document.getElementById('unseated-search')?.value || '').trim().toLowerCase();
+  const shown = q ? all.filter((e) => e.name.toLowerCase().includes(q)) : all;
+  const esc = (v) => String(v).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const count = document.getElementById('unseated-count');
+  if (count) count.textContent = all.length;
+  list.innerHTML = shown.map((e) => `
+    <div class="unseated-item${state.armedEmployeeId === e.id ? ' armed' : ''}" draggable="true" data-id="${e.id}" title="Drag onto a free desk, or click then click a desk">
+      <span>${esc(e.name)}</span><small>${esc(e.department || '')}</small>
+    </div>`).join('') || `<div class="unseated-hint">${q ? 'No match' : 'Everyone has a seat 🎉'}</div>`;
+  list.querySelectorAll('.unseated-item').forEach((item) => {
+    const id = Number(item.dataset.id);
+    item.addEventListener('dragstart', (ev) => { handleEmployeeDragStart(ev, id); ev.dataTransfer.effectAllowed = 'move'; });
+    item.addEventListener('click', () => armEmployee(state.armedEmployeeId === id ? null : id));
+  });
+}
+
+// Click a name, then a free desk, to seat them (the click-to-assign alternative to dragging).
+function armEmployee(id) {
+  state.armedEmployeeId = id;
+  document.querySelectorAll('#unseated-list .unseated-item').forEach((el) => {
+    el.classList.toggle('armed', Number(el.dataset.id) === id);
+  });
+  document.querySelectorAll('.seat-node.free').forEach((el) => el.classList.toggle('armed-target', id != null));
+  if (id != null) {
+    const emp = state.employees.find((e) => e.id === id);
+    if (emp) showToast(`Now click a free desk for ${emp.name}`, 'success');
+  }
+}
+
+// If someone is armed, a click on a free desk seats them. Returns true when it handled the click.
+function seatArmedEmployee(seat) {
+  if (state.armedEmployeeId == null) return false;
+  const emp = state.employees.find((e) => e.id === state.armedEmployeeId);
+  if (!emp) { state.armedEmployeeId = null; return false; }
+  if (seat.status !== 'free') { showToast('Pick a free (green) desk.', 'error'); return true; }
+  state.armedEmployeeId = null;
+  placeEmployeeOnSeat(emp, seat);
+  return true;
+}
+
 function renderSummary() {
   const total = state.seats.length;
   const occupied = state.seats.filter((s) => s.status === 'occupied').length;
@@ -1969,6 +2011,7 @@ function renderSummary() {
   animateCount(document.getElementById('occupied-count'), occupied);
   animateCount(document.getElementById('free-count'), free);
   animateCount(document.getElementById('occupancy-rate'), occupancy, '%');
+  renderUnseatedList();
 }
 
 // Smoothly counts a number up/down to its new target.

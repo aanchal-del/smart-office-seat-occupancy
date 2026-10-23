@@ -1984,3 +1984,22 @@ input:focus, select:focus {
 .map-table-drop.drag-over { stroke: #2563eb; stroke-width: 4; }
 .map-seat-popup-html { position: fixed; z-index: 1000; width: 250px; max-height: calc(100vh - 16px); overflow-y: auto; border-radius: 14px; }
 .map-seat-popup-html .popup-card::after { display: none; }
+
+/* ── "Without a seat" list (left of the floor map) ───── */
+.map-layout { display: flex; gap: 16px; align-items: flex-start; }
+.map-layout .floor-map { flex: 1; min-width: 0; }
+.unseated-panel { flex: 0 0 250px; position: sticky; top: 12px; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+.unseated-panel summary { cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: space-between; list-style-position: inside; }
+.unseated-count { background: rgba(239, 68, 68, 0.14); color: #b91c1c; border-radius: 999px; padding: 1px 9px; font-size: 0.78rem; }
+.unseated-panel input[type="search"] { width: 100%; box-sizing: border-box; margin: 10px 0 6px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; }
+.unseated-hint { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.unseated-list { max-height: 62vh; overflow-y: auto; }
+.unseated-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid #eef0f3; border-radius: 8px; margin-bottom: 5px; font-size: 0.86rem; cursor: grab; background: #fff; user-select: none; }
+.unseated-item:hover { background: #f8fafc; }
+.unseated-item.armed { border-color: #2563eb; background: rgba(37, 99, 235, 0.1); }
+.unseated-item small { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+.seat-node.armed-target circle { stroke: #2563eb; stroke-width: 3px; }
+@media (max-width: 900px) {
+  .map-layout { flex-direction: column; }
+  .unseated-panel { flex-basis: auto; width: 100%; position: static; box-sizing: border-box; }
+}
