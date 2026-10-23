@@ -291,7 +291,8 @@ function uiDialog({ message, withInput = false, defaultValue = '', okLabel = 'OK
     box.appendChild(row);
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    const done = (value) => { overlay.remove(); resolve(value); };
+    debugLog(`dialog opened: ${message.split('\n')[0]}`);
+    const done = (value) => { debugLog(`dialog closed with ${JSON.stringify(value)}`); overlay.remove(); resolve(value); };
     ok.addEventListener('click', () => done(withInput ? input.value : true));
     cancel.addEventListener('click', () => done(withInput ? null : false));
     overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) done(withInput ? null : false); });
@@ -481,12 +482,28 @@ async function initApp() {
   showBuildStamp();
 }
 
+// ?debug=1 in the address shows a live step log in the corner (for diagnosing problems).
+const DEBUG_ON = /[?&]debug\b/.test(location.search);
+function debugLog(msg) {
+  if (!DEBUG_ON) return;
+  let box = document.getElementById('debug-log');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'debug-log';
+    box.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:20000;width:430px;max-height:42vh;overflow:auto;background:rgba(15,23,42,.92);color:#a7f3d0;font:11px/1.35 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;';
+    document.body.appendChild(box);
+  }
+  const t = new Date().toLocaleTimeString([], { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+  box.textContent += `${t}  ${msg}\n`;
+  box.scrollTop = box.scrollHeight;
+}
+
 // Surface hidden script errors on screen instead of failing silently.
-window.addEventListener('error', (e) => { try { showToast('Error: ' + (e.message || 'unknown'), 'error'); } catch (_) {} });
-window.addEventListener('unhandledrejection', (e) => { try { showToast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 'error'); } catch (_) {} });
+window.addEventListener('error', (e) => { debugLog('JS ERROR: ' + e.message); try { showToast('Error: ' + (e.message || 'unknown'), 'error'); } catch (_) {} });
+window.addEventListener('unhandledrejection', (e) => { debugLog('PROMISE ERROR: ' + ((e.reason && e.reason.message) || e.reason)); try { showToast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 'error'); } catch (_) {} });
 
 // Tiny corner label so it is obvious which copy of the app a browser is running.
-const APP_BUILD = '2026-10-22 · assign v6';
+const APP_BUILD = '2026-10-22 · assign v8';
 function showBuildStamp() {
   const el = document.createElement('div');
   el.textContent = `Build ${APP_BUILD}`;
@@ -646,7 +663,10 @@ function bindUIActions() {
   }
 
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('.seat-node') && !event.target.closest('.cabin-box') && !event.target.closest('.map-seat-popup')) {
+    const path = event.composedPath ? event.composedPath() : [];
+    const insidePopup = path.some((el) => el.classList && el.classList.contains('map-seat-popup'));
+    if (!insidePopup && !event.target.closest('.seat-node') && !event.target.closest('.cabin-box') && !event.target.closest('.map-seat-popup')) {
+      debugLog('click outside the popup closed it; target: ' + (event.target.tagName || '?') + '.' + (event.target.className && event.target.className.baseVal !== undefined ? event.target.className.baseVal : event.target.className));
       document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
     }
     if (!event.target.closest('.floor-map')) {
@@ -794,6 +814,7 @@ window.resetZoom = resetZoom;
 function renderFloorMap() {
   if (state.tableVisualMode) { renderTableVisual(); return; }
   const mapContainer = document.getElementById('floor-map');
+  if (document.querySelector('.map-seat-popup')) debugLog('renderFloorMap removed an open popup; caller: ' + ((new Error().stack || '').split('\n')[2] || '?').trim());
   document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
   mapContainer.innerHTML = '';
   mapContainer.className = 'floor-map svg-mode';
@@ -1228,6 +1249,7 @@ async function onMapSeatDragEnd(e) {
 
 // ── Interactive SVG Map Tooltips and Click Handlers ─────────────────────────
 function handleSeatClick(seatId) {
+  debugLog(`seat click ${seatId}`);
   // Remove existing popups
   document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
 
@@ -1282,6 +1304,7 @@ function handleSeatClick(seatId) {
         .map(e => ({ name: e.name, dept: e.department || '', seated: deskNames.has(e.name.trim().toLowerCase()) }))
         .sort((a, b) => (a.seated - b.seated) || a.name.localeCompare(b.name));
       window.assignPeople = people;
+      window.assignSeatId = seat.id;
       actions = `
         <div style="margin-bottom: 6px;">
           <input id="popup-assign-select" placeholder="Type a name to search…" autocomplete="off"
@@ -1343,7 +1366,7 @@ function filterAssignPeople(value) {
   const q = value.trim().toLowerCase();
   const hits = (window.assignPeople || []).filter((p) => !q || p.name.toLowerCase().includes(q)).slice(0, 40);
   box.innerHTML = hits.map((p, i) => `
-    <div data-i="${i}" onclick="pickAssignPerson(${(window.assignPeople || []).indexOf(p)})"
+    <div data-i="${i}" onclick="event.stopPropagation(); pickAssignPerson(${(window.assignPeople || []).indexOf(p)})"
          style="padding:4px 6px;font-size:0.74rem;cursor:pointer;background:#1e293b;border-bottom:1px solid #334155;display:flex;justify-content:space-between;gap:6px;">
       <span>${p.name}</span><span style="opacity:.65">${p.seated ? 'has a desk' : 'no desk'}</span>
     </div>`).join('') || '<div style="padding:4px 6px;font-size:0.74rem;opacity:.7;">No match</div>';
@@ -1351,9 +1374,10 @@ function filterAssignPeople(value) {
 function pickAssignPerson(index) {
   const p = (window.assignPeople || [])[index];
   const input = document.getElementById('popup-assign-select');
-  if (p && input) { input.value = p.name; input.focus(); }
-  const box = document.getElementById('popup-assign-results');
-  if (box) box.innerHTML = '';
+  if (!p || !input) return;
+  input.value = p.name;
+  debugLog(`suggestion clicked: ${p.name}`);
+  if (window.assignSeatId) assignSeatFromPopup(window.assignSeatId); // one click: pick the name and assign
 }
 window.filterAssignPeople = filterAssignPeople;
 window.pickAssignPerson = pickAssignPerson;
@@ -1372,6 +1396,7 @@ function findEmployeeByTypedName(raw) {
 // Put a person on a free desk (freeing any desk they already had). The screen
 // updates immediately; the database saves happen in the background.
 async function placeEmployeeOnSeat(emp, seat) {
+  debugLog(`placing ${emp.name} on ${seat.label}`);
   const oldSeat = state.seats.find((s) => s.status === 'occupied' && s.occupant
     && s.occupant.name.trim().toLowerCase() === emp.name.trim().toLowerCase());
   if (oldSeat) { oldSeat.status = 'free'; oldSeat.occupant = null; }
@@ -1403,6 +1428,7 @@ async function placeEmployeeOnSeat(emp, seat) {
       empSave,
       saveSeat(seat),
     ]);
+    debugLog(`saves done: ${JSON.stringify(results.map((r) => (r && r.ok === false ? 'FAIL' : 'ok')))}`);
     if (results.some((r) => r && r.ok === false)) {
       if (isNew && emp.id == null) {
         // the new person could not be saved: undo what was shown
@@ -1420,6 +1446,7 @@ async function placeEmployeeOnSeat(emp, seat) {
 }
 
 async function assignSeatFromPopup(seatId) {
+  debugLog(`ASSIGN pressed for ${seatId}`);
   const input = document.getElementById('popup-assign-select');
   const raw = input ? input.value.trim().replace(/\s+/g, ' ') : '';
   if (!raw) { showToast('Type a name first.', 'error'); return; }
@@ -1428,6 +1455,7 @@ async function assignSeatFromPopup(seatId) {
   if (seat.status !== 'free') { showToast(`${seat.label} is no longer free.`, 'error'); return; }
 
   let emp = findEmployeeByTypedName(raw);
+  debugLog(`typed "${raw}" -> ${emp ? 'existing person ' + emp.name : 'NO match (new person)'}`);
   if (!emp) {
     // not in the list: add them as a new person at this desk
     if (!(await uiConfirm(`"${raw}" is not in the list.\nAdd as a new person at ${seat.label} (${seat.department})?`, 'Add person'))) return;
@@ -2933,9 +2961,9 @@ function renderAdminEmployees() {
 
 // ── Auto-refresh: re-fetches live data from API every 10 s ───────────────────
 async function autoRefreshTick() {
-  if (isUserBusy()) return; // don't redraw the map under a drag, a popup, a dialog or an unsaved change
+  if (isUserBusy()) { debugLog('auto-refresh skipped (busy)'); return; } // don't redraw the map under a drag, a popup, a dialog or an unsaved change
   const loaded = await loadFromServer({ background: true });
-  if (!loaded || isUserBusy()) return; // failed, or the user started something while it loaded
+  if (!loaded || isUserBusy()) { debugLog(`auto-refresh dropped (loaded=${loaded}, busy=${isUserBusy()})`); return; } // failed, or the user started something while it loaded
   await checkExpiredVisitors();
   await checkExpiredRooms();
   if (isUserBusy()) return;
