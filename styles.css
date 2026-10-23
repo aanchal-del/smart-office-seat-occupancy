@@ -2010,3 +2010,7 @@ input:focus, select:focus {
 /* "+" after a full row on the map: quiet until hovered */
 .map-add-seat:hover circle { stroke: #2563eb; fill: #eff6ff; }
 .map-add-seat:hover text { fill: #2563eb; }
+/* "Delete seat" at the bottom of a desk's popup on the map */
+.map-seat-popup .popup-delete-seat { display: block; width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 0.74rem;
+  background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,.45); border-radius: 6px; cursor: pointer; }
+.map-seat-popup .popup-delete-seat:hover { background: rgba(248,113,113,.12); color: #fca5a5; }

@@ -1418,6 +1418,9 @@ function handleSeatClick(seatId) {
   if (!coords) return;
   const { x, y } = coords;
 
+  const deleteButton = state.adminLoggedIn
+    ? `<button class="btn small popup-delete-seat" onclick="deleteSeatFromMap('${seat.id}')">Delete seat</button>`
+    : '';
   let contentHtml = '';
   if (seat.status === 'occupied' && seat.occupant) {
     const isVisitor = seat.occupant?.type === 'visitor';
@@ -1438,6 +1441,7 @@ function handleSeatClick(seatId) {
           ${releaseButton}
           ${wfhButton}
         </div>
+        ${deleteButton}
       </div>`;
   } else if (seat.status === 'reserved') {
     const releaseButton = state.adminLoggedIn
@@ -1450,6 +1454,7 @@ function handleSeatClick(seatId) {
         <div class="popup-actions">
           ${releaseButton}
         </div>
+        ${deleteButton}
       </div>`;
   } else {
     let actions = '';
@@ -1491,6 +1496,7 @@ function handleSeatClick(seatId) {
         <h4>${seat.label}</h4>
         <div class="popup-dept" style="margin-bottom: 8px;">Zone: ${seat.department}</div>
         ${actions}
+        ${deleteButton}
       </div>`;
   }
 
@@ -1516,6 +1522,12 @@ function handleSeatClick(seatId) {
   popup.style.visibility = '';
 }
 window.handleSeatClick = handleSeatClick;
+
+function deleteSeatFromMap(seatId) {
+  document.querySelectorAll('.map-seat-popup').forEach((p) => p.remove());
+  deleteSeat(seatId);
+}
+window.deleteSeatFromMap = deleteSeatFromMap;
 
 // Live name search inside the desk popup: shows matching people; click one to fill the box.
 function filterAssignPeople(value) {
@@ -3007,7 +3019,8 @@ function openAdminSeatPopover(seatId, anchorEl) {
 async function deleteSeat(seatId) {
   const seat = state.seats.find((s) => s.id === seatId);
   if (!seat) return;
-  if (!(await uiConfirm(`Delete ${seat.label} from the layout?\nThis removes the seat entirely.`, 'Delete'))) return;
+  const who = seat.occupant && seat.occupant.name;
+  if (!(await uiConfirm(`Delete ${seat.label} (${seat.table}) from the layout?\nThis removes the seat entirely.${who ? `\n${who} will move to “Without a seat”.` : ''}`, 'Delete'))) return;
   const emp = state.employees.find((e) => e.seat === seatId);
   if (emp) {
     emp.seat = null; emp.table = 'No desk'; emp.wfh = true;
