@@ -159,7 +159,22 @@ const seatMeta = {};
   });
 })();
 
-const SEATS_PER_ROW = 5; // each table has 2 rows; a row holds at most this many desks
+const SEATS_PER_ROW = 5; // default row size for a table that isn't listed below
+
+// Real seats per table, as [top row, bottom row]. Keyed by table name without
+// spaces/case, so "Table1" and "Table 1" match. A renamed table uses the default.
+const TABLE_ROWS = {
+  table1: [4, 4], table2: [4, 4], table3: [4, 4], table4: [4, 4],
+  table5: [4, 4], table6: [4, 5], table7: [4, 3], table8: [2, 3],
+};
+const tableKey = (t) => String(t || '').replace(/\s+/g, '').toLowerCase();
+function rowCap(table, side) {
+  const r = TABLE_ROWS[tableKey(table)];
+  return r ? r[side === 'top' ? 0 : 1] : SEATS_PER_ROW;
+}
+const tableCap = (table) => rowCap(table, 'top') + rowCap(table, 'bottom');
+// x of position k in a row, with the row centred on the table at its real size
+const rowX = (cx, table, side, k) => cx - ((rowCap(table, side) - 1) / 2) * SEAT_GAP + k * SEAT_GAP;
 
 // Re-derive seatMeta (which row/side each desk sits on) from the ACTUAL seats in
 // state, so dynamically-added desks get placed correctly. Rule: a desk prefers
@@ -191,13 +206,14 @@ function rebuildSeatMeta() {
       teams = { top: depts[0], bottom: depts[1] || depts[0] };
     }
     let top = 0, bottom = 0;
+    const capTop = rowCap(table, 'top'), capBottom = rowCap(table, 'bottom');
     seats.forEach((s) => {
       let side;
-      if (s.department === teams.top && top < SEATS_PER_ROW) side = 'top';
-      else if (s.department === teams.bottom && bottom < SEATS_PER_ROW) side = 'bottom';
-      else if (top < SEATS_PER_ROW) side = 'top';
-      else if (bottom < SEATS_PER_ROW) side = 'bottom';
-      else side = 'top'; // beyond 2 full rows — shouldn't happen (add-seat caps at 10)
+      if (s.department === teams.top && top < capTop) side = 'top';
+      else if (s.department === teams.bottom && bottom < capBottom) side = 'bottom';
+      else if (top < capTop) side = 'top';
+      else if (bottom < capBottom) side = 'bottom';
+      else side = top - capTop <= bottom - capBottom ? 'top' : 'bottom'; // more desks than real seats: keep them visible past the row end
       const sideIndex = side === 'top' ? top++ : bottom++;
       seatMeta[s.id] = { table, department: s.department, side, sideIndex };
     });
@@ -831,8 +847,7 @@ function getSeatCoordinates(seatId) {
   if (!m) return null;
   const L = tableLayout(m.table);
   if (!L) return null;
-  const span = 4 * SEAT_GAP; // 5 seats → centre the row on the table
-  const x = L.cx - span / 2 + m.sideIndex * SEAT_GAP;
+  const x = rowX(L.cx, m.table, m.side, m.sideIndex);
   const y = m.side === 'top' ? L.topY : L.bottomY;
   return { x, y, dir: m.side };
 }
@@ -1176,9 +1191,9 @@ function renderFloorMap() {
     seats.forEach((s) => { count[getSeatSide(s)]++; });
     ['top', 'bottom'].forEach((side) => {
       const other = side === 'top' ? 'bottom' : 'top';
-      if (count[side] === 0 && count[other] < SEATS_PER_ROW) return;
-      for (let k = count[side]; k < SEATS_PER_ROW; k++) {
-        const x = L.cx - 2 * SEAT_GAP + k * SEAT_GAP;
+      if (count[side] === 0 && count[other] < rowCap(tableName, other)) return;
+      for (let k = count[side]; k < rowCap(tableName, side); k++) {
+        const x = rowX(L.cx, tableName, side, k);
         const y = side === 'top' ? L.topY : L.bottomY;
         const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         slot.setAttribute('class', 'map-empty-slot');
@@ -1234,9 +1249,9 @@ async function moveDeskToSlot(seatId, table, side) {
   if (!seat) return;
   if (seat.table === table && getSeatSide(seat) === side) return; // already there
   const others = state.seats.filter((s) => s.table === table && s.id !== seatId);
-  if (others.length >= SEATS_PER_ROW * 2) { showToast(`${table} is full (max ${SEATS_PER_ROW * 2} desks).`, 'error'); return; }
+  if (others.length >= tableCap(table)) { showToast(`${table} is full (${tableCap(table)} seats).`, 'error'); return; }
   const sideSeats = others.filter((s) => getSeatSide(s) === side);
-  if (sideSeats.length >= SEATS_PER_ROW) { showToast('That row is full.', 'error'); return; }
+  if (sideSeats.length >= rowCap(table, side)) { showToast('That row is full.', 'error'); return; }
 
   // the desk takes the team of the row it joins
   const counts = {};
@@ -1783,7 +1798,7 @@ async function getOrAddDeskOnSide(table, side) {
   const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
   let target = sideSeats.find((s) => s.status === 'free');
   if (target) return target;
-  if (state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) return null;
+  if (sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table)) return null;
   const cfg = tableConfig.find((t) => t.table === table);
   const cfgSide = cfg && cfg.sides[side === 'top' ? 0 : 1];
   const teamForSide = (sideSeats[0] && sideSeats[0].department)
@@ -1814,7 +1829,7 @@ async function adminDropOnEmptySlot(sourceSeatId, table, side) {
 // Click on an empty "+" slot: add a new free desk at the end of that row.
 async function adminAddDeskToSlot(table, side) {
   const sideSeats = state.seats.filter((s) => s.table === table && getSeatSide(s) === side);
-  if (sideSeats.length >= SEATS_PER_ROW || state.seats.filter((s) => s.table === table).length >= SEATS_PER_ROW * 2) {
+  if (sideSeats.length >= rowCap(table, side) || state.seats.filter((s) => s.table === table).length >= tableCap(table)) {
     showToast('That row is full.', 'error');
     return;
   }
@@ -2565,8 +2580,8 @@ async function handleSeatAdd(event) {
     return;
   }
   const tableCount = state.seats.filter((s) => s.table === table).length;
-  if (tableCount >= SEATS_PER_ROW * 2) {
-    showToast(`${table} is full — max ${SEATS_PER_ROW * 2} desks (${SEATS_PER_ROW} per row).`, 'error');
+  if (tableCount >= tableCap(table)) {
+    showToast(`${table} is full — ${tableCap(table)} seats (${rowCap(table, 'top')} + ${rowCap(table, 'bottom')}).`, 'error');
     return;
   }
   const seat = { id: label, label, floor: 'main-floor', status: 'free', occupant: null, department, table, color: null };
@@ -2824,8 +2839,8 @@ function renderAdminSeatVisual() {
       let html = rowSeats.map(chair).join('');
       const otherCount = (side === 'top' ? bottomSeats : topSeats).length;
       // only offer "+" where a new desk really lands on this row
-      if (rowSeats.length === 0 && otherCount < SEATS_PER_ROW) return html;
-      for (let i = rowSeats.length; i < SEATS_PER_ROW; i++) html += emptySlot(side);
+      if (rowSeats.length === 0 && otherCount < rowCap(tableName, side === 'top' ? 'bottom' : 'top')) return html;
+      for (let i = rowSeats.length; i < rowCap(tableName, side); i++) html += emptySlot(side);
       return html;
     };
     return `
